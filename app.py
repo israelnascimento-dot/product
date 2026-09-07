@@ -14,10 +14,67 @@ st.set_page_config(
     layout="wide"
 )
 
+DB = "produtividade.db"
+
+
+# =========================================================
+# LOGIN
+# =========================================================
+
+SENHA_CORRETA = "2010"
+
+
+def tela_login():
+
+    st.title("📊 PRODUCT")
+    st.subheader("🔐 Acesso ao Sistema")
+
+    st.write("Digite a senha para acessar o sistema.")
+
+    senha = st.text_input(
+        "🔑 Senha",
+        type="password",
+        key="senha_login"
+    )
+
+    entrar = st.button(
+        "🔓 ENTRAR",
+        use_container_width=True
+    )
+
+    if entrar:
+
+        if senha == SENHA_CORRETA:
+
+            st.session_state["autenticado"] = True
+            st.rerun()
+
+        else:
+
+            st.error("❌ Senha incorreta.")
+
+
+# =========================================================
+# VERIFICAÇÃO DE LOGIN
+# =========================================================
+
+if "autenticado" not in st.session_state:
+
+    st.session_state["autenticado"] = False
+
+
+if not st.session_state["autenticado"]:
+
+    tela_login()
+    st.stop()
+
+
+# =========================================================
+# CABEÇALHO
+# =========================================================
+
 st.title("📊 PRODUCT")
 st.subheader("Sistema de Controle de Produtividade")
-
-DB = "produtividade.db"
 
 
 # =========================================================
@@ -25,6 +82,7 @@ DB = "produtividade.db"
 # =========================================================
 
 def conectar():
+
     return sqlite3.connect(DB)
 
 
@@ -99,20 +157,17 @@ def buscar_produtividade():
 
         df["data"] = pd.to_datetime(df["data"])
 
-        # Total de SYSVET
         df["total_sysvet"] = (
             df["sysvet_erro"] +
             df["sysvet_exito"]
         )
 
-        # Produtividade total
         df["produtividade_total"] = (
             df["sysvet_erro"] +
             df["sysvet_exito"] +
             df["faturado"]
         )
 
-        # Taxa de êxito
         df["taxa_exito"] = df.apply(
             lambda x:
             (
@@ -144,6 +199,16 @@ pagina = st.sidebar.radio(
     ]
 )
 
+st.sidebar.divider()
+
+if st.sidebar.button(
+    "🚪 SAIR",
+    use_container_width=True
+):
+
+    st.session_state["autenticado"] = False
+    st.rerun()
+
 
 # =========================================================
 # DASHBOARD
@@ -151,7 +216,7 @@ pagina = st.sidebar.radio(
 
 if pagina == "📈 Dashboard":
 
-    st.title("📊 PRODUCT")
+    st.title("📊 Dashboard")
 
     st.caption(
         "Sistema de Controle de Produtividade"
@@ -192,18 +257,22 @@ if pagina == "📈 Dashboard":
             df_filtrado = df[
                 (df["data"].dt.date >= inicio) &
                 (df["data"].dt.date <= fim)
-            ]
+            ].copy()
 
         else:
 
             df_filtrado = df.copy()
+
+        # =================================================
+        # FILTRO POR COLABORADOR
+        # =================================================
 
         lista_colaboradores = sorted(
             df_filtrado["colaborador"].unique()
         )
 
         selecionados = st.sidebar.multiselect(
-            "Colaborador",
+            "👤 Colaborador",
             lista_colaboradores,
             default=lista_colaboradores
         )
@@ -212,7 +281,7 @@ if pagina == "📈 Dashboard":
 
             df_filtrado = df_filtrado[
                 df_filtrado["colaborador"].isin(selecionados)
-            ]
+            ].copy()
 
         # =================================================
         # INDICADORES
@@ -284,8 +353,10 @@ if pagina == "📈 Dashboard":
         st.divider()
 
         # =================================================
-        # RANKING
+        # PRODUTIVIDADE POR COLABORADOR
         # =================================================
+
+        st.subheader("👥 Produtividade por colaborador")
 
         resumo = (
             df_filtrado
@@ -303,11 +374,49 @@ if pagina == "📈 Dashboard":
             )
         )
 
-        col1, col2 = st.columns(2)
+        ranking = resumo.copy()
+
+        ranking.insert(
+            0,
+            "Posição",
+            range(1, len(ranking) + 1)
+        )
+
+        ranking["Taxa de Êxito"] = ranking.apply(
+            lambda x:
+            (
+                x["SYSVET_Exito"] /
+                (
+                    x["SYSVET_Erro"] +
+                    x["SYSVET_Exito"]
+                ) * 100
+            )
+            if (
+                x["SYSVET_Erro"] +
+                x["SYSVET_Exito"]
+            ) > 0
+            else 0,
+            axis=1
+        )
+
+        ranking["Taxa de Êxito"] = (
+            ranking["Taxa de Êxito"]
+            .round(1)
+            .astype(str)
+            + "%"
+        )
+
+        st.dataframe(
+            ranking,
+            use_container_width=True,
+            hide_index=True
+        )
 
         # =================================================
-        # GRÁFICO RANKING
+        # GRÁFICOS
         # =================================================
+
+        col1, col2 = st.columns(2)
 
         with col1:
 
@@ -335,10 +444,6 @@ if pagina == "📈 Dashboard":
                 fig,
                 use_container_width=True
             )
-
-        # =================================================
-        # GRÁFICO POR TIPO
-        # =================================================
 
         with col2:
 
@@ -379,7 +484,7 @@ if pagina == "📈 Dashboard":
             )
 
         # =================================================
-        # EVOLUÇÃO DIÁRIA
+        # EVOLUÇÃO
         # =================================================
 
         st.subheader("📈 Evolução da produtividade")
@@ -418,50 +523,6 @@ if pagina == "📈 Dashboard":
             use_container_width=True
         )
 
-        # =================================================
-        # RANKING DETALHADO
-        # =================================================
-
-        st.subheader("🏆 Ranking detalhado")
-
-        ranking = resumo.copy()
-
-        ranking.insert(
-            0,
-            "Posição",
-            range(1, len(ranking) + 1)
-        )
-
-        ranking["Taxa de Êxito"] = ranking.apply(
-            lambda x:
-            (
-                x["SYSVET_Exito"] /
-                (
-                    x["SYSVET_Erro"] +
-                    x["SYSVET_Exito"]
-                ) * 100
-            )
-            if (
-                x["SYSVET_Erro"] +
-                x["SYSVET_Exito"]
-            ) > 0
-            else 0,
-            axis=1
-        )
-
-        ranking["Taxa de Êxito"] = (
-            ranking["Taxa de Êxito"]
-            .round(1)
-            .astype(str)
-            + "%"
-        )
-
-        st.dataframe(
-            ranking,
-            use_container_width=True,
-            hide_index=True
-        )
-
 
 # =========================================================
 # LANÇAR PRODUTIVIDADE
@@ -477,10 +538,6 @@ elif pagina == "📝 Lançar produtividade":
 
         st.warning(
             "⚠️ Cadastre primeiro os colaboradores."
-        )
-
-        st.info(
-            "Vá até o menu '👥 Colaboradores'."
         )
 
     else:
@@ -638,13 +695,7 @@ elif pagina == "👥 Colaboradores":
 
     colaboradores = buscar_colaboradores()
 
-    if colaboradores.empty:
-
-        st.info(
-            "Nenhum colaborador cadastrado."
-        )
-
-    else:
+    if not colaboradores.empty:
 
         st.dataframe(
             colaboradores[
@@ -652,6 +703,12 @@ elif pagina == "👥 Colaboradores":
             ],
             use_container_width=True,
             hide_index=True
+        )
+
+    else:
+
+        st.info(
+            "Nenhum colaborador cadastrado."
         )
 
 
@@ -674,18 +731,20 @@ elif pagina == "📋 Histórico":
     else:
 
         # =================================================
-        # EXCLUIR POR DATA
+        # EXCLUSÃO POR DATA
         # =================================================
 
-        st.subheader("🗑️ Excluir todos os registros de um dia")
+        st.subheader(
+            "🗑️ Excluir todos os registros de um dia"
+        )
 
         st.warning(
-            "⚠️ Esta opção excluirá TODOS os lançamentos "
-            "da data selecionada."
+            "⚠️ Esta operação excluirá TODOS os "
+            "lançamentos da data selecionada."
         )
 
         data_exclusao = st.date_input(
-            "📅 Selecione a data para exclusão",
+            "📅 Selecione a data",
             value=date.today(),
             key="data_exclusao"
         )
@@ -766,8 +825,7 @@ elif pagina == "📋 Histórico":
                     conn.close()
 
                     st.success(
-                        f"✅ {excluidos} registro(s) excluído(s) "
-                        f"do dia {data_exclusao.strftime('%d/%m/%Y')}."
+                        f"✅ {excluidos} registro(s) excluído(s)."
                     )
 
                     st.rerun()
@@ -784,40 +842,34 @@ elif pagina == "📋 Histórico":
 
         st.divider()
 
-        st.subheader("✏️ Editar ou excluir lançamento individual")
+        st.subheader(
+            "✏️ Editar ou excluir lançamento individual"
+        )
 
         ids_disponiveis = df["id"].tolist()
 
         id_selecionado = st.selectbox(
             "Selecione o ID do lançamento",
-            ids_disponiveis,
-            key="id_edicao"
+            ids_disponiveis
         )
 
         registro = df[
             df["id"] == id_selecionado
         ].iloc[0]
 
-        st.markdown(
-            f"""
-            **Registro selecionado**
-
-            - 👤 Colaborador: **{registro['colaborador']}**
-            - 📅 Data: **{registro['data'].strftime('%d/%m/%Y')}**
-            - ❌ SYSVET Erro: **{registro['sysvet_erro']}**
-            - ✅ SYSVET Êxito: **{registro['sysvet_exito']}**
-            - 📁 Faturado: **{registro['faturado']}**
-            """
+        st.info(
+            f"👤 {registro['colaborador']} | "
+            f"📅 {registro['data'].strftime('%d/%m/%Y')} | "
+            f"📊 Total: {registro['produtividade_total']}"
         )
 
         acao = st.radio(
-            "O que deseja fazer?",
+            "Ação",
             [
                 "✏️ Editar lançamento",
                 "🗑️ Excluir lançamento"
             ],
-            horizontal=True,
-            key="acao_registro"
+            horizontal=True
         )
 
         # =================================================
@@ -832,102 +884,112 @@ elif pagina == "📋 Histórico":
                 colaboradores["nome"].tolist()
             )
 
-            indice_colaborador = lista_colaboradores.index(
-                registro["colaborador"]
-            )
+            if lista_colaboradores:
 
-            with st.form("form_editar_registro"):
-
-                nova_data = st.date_input(
-                    "📅 Data",
-                    value=registro["data"].date()
+                indice_colaborador = (
+                    lista_colaboradores.index(
+                        registro["colaborador"]
+                    )
                 )
 
-                novo_colaborador = st.selectbox(
-                    "👤 Colaborador",
-                    lista_colaboradores,
-                    index=indice_colaborador
-                )
+                with st.form("form_editar_registro"):
 
-                col1, col2, col3 = st.columns(3)
-
-                with col1:
-
-                    novo_erro = st.number_input(
-                        "❌ SYSVET com erro",
-                        min_value=0,
-                        value=int(registro["sysvet_erro"]),
-                        step=1
+                    nova_data = st.date_input(
+                        "📅 Data",
+                        value=registro["data"].date()
                     )
 
-                with col2:
-
-                    novo_exito = st.number_input(
-                        "✅ SYSVET com êxito",
-                        min_value=0,
-                        value=int(registro["sysvet_exito"]),
-                        step=1
+                    novo_colaborador = st.selectbox(
+                        "👤 Colaborador",
+                        lista_colaboradores,
+                        index=indice_colaborador
                     )
 
-                with col3:
+                    col1, col2, col3 = st.columns(3)
 
-                    novo_faturado = st.number_input(
-                        "📁 Faturado",
-                        min_value=0,
-                        value=int(registro["faturado"]),
-                        step=1
-                    )
+                    with col1:
 
-                novo_total = (
-                    novo_erro +
-                    novo_exito +
-                    novo_faturado
-                )
-
-                st.info(
-                    f"📊 Nova produtividade total: "
-                    f"**{novo_total}**"
-                )
-
-                salvar_edicao = st.form_submit_button(
-                    "💾 SALVAR ALTERAÇÕES",
-                    use_container_width=True
-                )
-
-                if salvar_edicao:
-
-                    conn = conectar()
-
-                    conn.execute(
-                        """
-                        UPDATE produtividade
-                        SET
-                            data = ?,
-                            colaborador = ?,
-                            sysvet_erro = ?,
-                            sysvet_exito = ?,
-                            faturado = ?
-                        WHERE id = ?
-                        """,
-                        (
-                            str(nova_data),
-                            novo_colaborador,
-                            int(novo_erro),
-                            int(novo_exito),
-                            int(novo_faturado),
-                            int(id_selecionado)
+                        novo_erro = st.number_input(
+                            "❌ SYSVET com erro",
+                            min_value=0,
+                            value=int(
+                                registro["sysvet_erro"]
+                            ),
+                            step=1
                         )
+
+                    with col2:
+
+                        novo_exito = st.number_input(
+                            "✅ SYSVET com êxito",
+                            min_value=0,
+                            value=int(
+                                registro["sysvet_exito"]
+                            ),
+                            step=1
+                        )
+
+                    with col3:
+
+                        novo_faturado = st.number_input(
+                            "📁 Faturado",
+                            min_value=0,
+                            value=int(
+                                registro["faturado"]
+                            ),
+                            step=1
+                        )
+
+                    novo_total = (
+                        novo_erro +
+                        novo_exito +
+                        novo_faturado
                     )
 
-                    conn.commit()
-                    conn.close()
-
-                    st.success(
-                        f"✅ Registro ID {id_selecionado} "
-                        "alterado com sucesso!"
+                    st.info(
+                        f"📊 Nova produtividade total: "
+                        f"**{novo_total}**"
                     )
 
-                    st.rerun()
+                    salvar_edicao = st.form_submit_button(
+                        "💾 SALVAR ALTERAÇÕES",
+                        use_container_width=True
+                    )
+
+                    if salvar_edicao:
+
+                        conn = conectar()
+
+                        conn.execute(
+                            """
+                            UPDATE produtividade
+                            SET
+                                data = ?,
+                                colaborador = ?,
+                                sysvet_erro = ?,
+                                sysvet_exito = ?,
+                                faturado = ?
+                            WHERE id = ?
+                            """,
+                            (
+                                str(nova_data),
+                                novo_colaborador,
+                                int(novo_erro),
+                                int(novo_exito),
+                                int(novo_faturado),
+                                int(id_selecionado)
+                            )
+                        )
+
+                        conn.commit()
+                        conn.close()
+
+                        st.success(
+                            f"✅ Registro ID "
+                            f"{id_selecionado} atualizado!"
+                        )
+
+                        st.rerun()
 
         # =================================================
         # EXCLUIR INDIVIDUAL
@@ -941,8 +1003,7 @@ elif pagina == "📋 Histórico":
             )
 
             confirmar_individual = st.checkbox(
-                "Confirmo que desejo excluir este lançamento.",
-                key="confirmar_individual"
+                "Confirmo que desejo excluir este lançamento."
             )
 
             if confirmar_individual:
@@ -973,14 +1034,13 @@ elif pagina == "📋 Histórico":
                     if excluido > 0:
 
                         st.success(
-                            f"✅ Registro ID {id_selecionado} "
-                            "excluído com sucesso!"
+                            "✅ Lançamento excluído com sucesso!"
                         )
 
                     else:
 
                         st.error(
-                            "❌ O registro não foi encontrado."
+                            "❌ Registro não encontrado."
                         )
 
                     st.rerun()
