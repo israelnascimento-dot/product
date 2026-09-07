@@ -16,73 +16,11 @@ st.set_page_config(
 
 DB = "produtividade.db"
 
-
-# =========================================================
-# LOGIN
-# =========================================================
-
-SENHA_CORRETA = "2010"
-
-
-def tela_login():
-
-    st.title("📊 PRODUCT")
-    st.subheader("🔐 Acesso ao Sistema")
-
-    st.write("Digite a senha para acessar o sistema.")
-
-    senha = st.text_input(
-        "🔑 Senha",
-        type="password",
-        key="senha_login"
-    )
-
-    entrar = st.button(
-        "🔓 ENTRAR",
-        use_container_width=True
-    )
-
-    if entrar:
-
-        if senha == SENHA_CORRETA:
-
-            st.session_state["autenticado"] = True
-            st.rerun()
-
-        else:
-
-            st.error("❌ Senha incorreta.")
-
-
-# =========================================================
-# VERIFICAÇÃO DE LOGIN
-# =========================================================
-
-if "autenticado" not in st.session_state:
-
-    st.session_state["autenticado"] = False
-
-
-if not st.session_state["autenticado"]:
-
-    tela_login()
-    st.stop()
-
-
-# =========================================================
-# CABEÇALHO
-# =========================================================
-
-st.title("📊 PRODUCT")
-st.subheader("Sistema de Controle de Produtividade")
-
-
 # =========================================================
 # BANCO DE DADOS
 # =========================================================
 
 def conectar():
-
     return sqlite3.connect(DB)
 
 
@@ -91,6 +29,7 @@ def criar_banco():
     conn = conectar()
     cursor = conn.cursor()
 
+    # Tabela de colaboradores
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS colaboradores (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -98,6 +37,7 @@ def criar_banco():
         )
     """)
 
+    # Tabela de produtividade
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS produtividade (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -109,11 +49,140 @@ def criar_banco():
         )
     """)
 
+    # Tabela de configurações
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS configuracoes (
+            id INTEGER PRIMARY KEY,
+            senha TEXT NOT NULL
+        )
+    """)
+
+    # Cria senha inicial somente se ainda não existir
+    cursor.execute(
+        "SELECT COUNT(*) FROM configuracoes"
+    )
+
+    existe_senha = cursor.fetchone()[0]
+
+    if existe_senha == 0:
+
+        cursor.execute(
+            """
+            INSERT INTO configuracoes (id, senha)
+            VALUES (1, ?)
+            """,
+            ("2010",)
+        )
+
     conn.commit()
     conn.close()
 
 
 criar_banco()
+
+
+# =========================================================
+# SENHA
+# =========================================================
+
+def buscar_senha():
+
+    conn = conectar()
+
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT senha
+        FROM configuracoes
+        WHERE id = 1
+        """
+    )
+
+    resultado = cursor.fetchone()
+
+    conn.close()
+
+    if resultado:
+        return resultado[0]
+
+    return "2010"
+
+
+def alterar_senha(nova_senha):
+
+    conn = conectar()
+
+    conn.execute(
+        """
+        UPDATE configuracoes
+        SET senha = ?
+        WHERE id = 1
+        """,
+        (nova_senha,)
+    )
+
+    conn.commit()
+    conn.close()
+
+
+# =========================================================
+# LOGIN
+# =========================================================
+
+def tela_login():
+
+    st.title("📊 PRODUCT")
+
+    st.subheader(
+        "🔐 Acesso ao Sistema"
+    )
+
+    st.write(
+        "Digite sua senha para acessar o sistema."
+    )
+
+    senha = st.text_input(
+        "🔑 Senha",
+        type="password"
+    )
+
+    entrar = st.button(
+        "🔓 ENTRAR",
+        use_container_width=True
+    )
+
+    if entrar:
+
+        senha_correta = buscar_senha()
+
+        if senha == senha_correta:
+
+            st.session_state["autenticado"] = True
+
+            st.rerun()
+
+        else:
+
+            st.error(
+                "❌ Senha incorreta."
+            )
+
+
+# =========================================================
+# CONTROLE DE LOGIN
+# =========================================================
+
+if "autenticado" not in st.session_state:
+
+    st.session_state["autenticado"] = False
+
+
+if not st.session_state["autenticado"]:
+
+    tela_login()
+
+    st.stop()
 
 
 # =========================================================
@@ -155,19 +224,24 @@ def buscar_produtividade():
 
     if not df.empty:
 
-        df["data"] = pd.to_datetime(df["data"])
+        df["data"] = pd.to_datetime(
+            df["data"]
+        )
 
+        # Total SYSVET
         df["total_sysvet"] = (
             df["sysvet_erro"] +
             df["sysvet_exito"]
         )
 
+        # Produtividade total
         df["produtividade_total"] = (
             df["sysvet_erro"] +
             df["sysvet_exito"] +
             df["faturado"]
         )
 
+        # Taxa de êxito
         df["taxa_exito"] = df.apply(
             lambda x:
             (
@@ -183,7 +257,7 @@ def buscar_produtividade():
 
 
 # =========================================================
-# MENU LATERAL
+# MENU
 # =========================================================
 
 st.sidebar.title("📊 PRODUCT")
@@ -195,9 +269,15 @@ pagina = st.sidebar.radio(
         "📝 Lançar produtividade",
         "👥 Colaboradores",
         "📋 Histórico",
-        "📥 Exportar"
+        "📥 Exportar",
+        "🔐 Alterar senha"
     ]
 )
+
+
+# =========================================================
+# SAIR
+# =========================================================
 
 st.sidebar.divider()
 
@@ -207,6 +287,7 @@ if st.sidebar.button(
 ):
 
     st.session_state["autenticado"] = False
+
     st.rerun()
 
 
@@ -227,8 +308,7 @@ if pagina == "📈 Dashboard":
     if df.empty:
 
         st.info(
-            "Ainda não existem registros. "
-            "Acesse 'Lançar produtividade' para começar."
+            "Ainda não existem registros."
         )
 
     else:
@@ -238,24 +318,60 @@ if pagina == "📈 Dashboard":
         # =================================================
 
         st.sidebar.markdown("---")
-        st.sidebar.subheader("🔎 FILTROS")
+
+        st.sidebar.subheader(
+            "🔎 FILTROS"
+        )
+
+        # -------------------------------------------------
+        # COLABORADOR
+        # -------------------------------------------------
+
+        colaboradores = sorted(
+            df["colaborador"]
+            .dropna()
+            .unique()
+            .tolist()
+        )
+
+        opcao_colaborador = [
+            "👥 TODOS OS COLABORADORES"
+        ] + colaboradores
+
+        colaborador_selecionado = st.sidebar.selectbox(
+            "👤 Selecione o colaborador",
+            opcao_colaborador
+        )
+
+        # -------------------------------------------------
+        # DATA
+        # -------------------------------------------------
 
         data_min = df["data"].min().date()
+
         data_max = df["data"].max().date()
 
         periodo = st.sidebar.date_input(
-            "Período",
+            "📅 Período",
             value=(data_min, data_max),
             min_value=data_min,
             max_value=data_max
         )
 
-        if isinstance(periodo, tuple) and len(periodo) == 2:
+        # -------------------------------------------------
+        # FILTRO DE DATA
+        # -------------------------------------------------
+
+        if (
+            isinstance(periodo, tuple)
+            and len(periodo) == 2
+        ):
 
             inicio, fim = periodo
 
             df_filtrado = df[
-                (df["data"].dt.date >= inicio) &
+                (df["data"].dt.date >= inicio)
+                &
                 (df["data"].dt.date <= fim)
             ].copy()
 
@@ -263,25 +379,44 @@ if pagina == "📈 Dashboard":
 
             df_filtrado = df.copy()
 
-        # =================================================
-        # FILTRO POR COLABORADOR
-        # =================================================
+        # -------------------------------------------------
+        # FILTRO DE COLABORADOR
+        # -------------------------------------------------
 
-        lista_colaboradores = sorted(
-            df_filtrado["colaborador"].unique()
-        )
-
-        selecionados = st.sidebar.multiselect(
-            "👤 Colaborador",
-            lista_colaboradores,
-            default=lista_colaboradores
-        )
-
-        if selecionados:
+        if (
+            colaborador_selecionado
+            != "👥 TODOS OS COLABORADORES"
+        ):
 
             df_filtrado = df_filtrado[
-                df_filtrado["colaborador"].isin(selecionados)
+                df_filtrado["colaborador"]
+                == colaborador_selecionado
             ].copy()
+
+            st.success(
+                f"👤 Visualizando produtividade de: "
+                f"**{colaborador_selecionado}**"
+            )
+
+        else:
+
+            st.info(
+                "👥 Visualizando produtividade de "
+                "**todos os colaboradores**."
+            )
+
+        # =================================================
+        # SEM RESULTADOS
+        # =================================================
+
+        if df_filtrado.empty:
+
+            st.warning(
+                "⚠️ Não existem registros para os "
+                "filtros selecionados."
+            )
+
+            st.stop()
 
         # =================================================
         # INDICADORES
@@ -353,19 +488,29 @@ if pagina == "📈 Dashboard":
         st.divider()
 
         # =================================================
-        # PRODUTIVIDADE POR COLABORADOR
+        # RESUMO POR COLABORADOR
         # =================================================
-
-        st.subheader("👥 Produtividade por colaborador")
 
         resumo = (
             df_filtrado
             .groupby("colaborador")
             .agg(
-                SYSVET_Erro=("sysvet_erro", "sum"),
-                SYSVET_Exito=("sysvet_exito", "sum"),
-                Faturado=("faturado", "sum"),
-                Total=("produtividade_total", "sum")
+                SYSVET_Erro=(
+                    "sysvet_erro",
+                    "sum"
+                ),
+                SYSVET_Exito=(
+                    "sysvet_exito",
+                    "sum"
+                ),
+                Faturado=(
+                    "faturado",
+                    "sum"
+                ),
+                Total=(
+                    "produtividade_total",
+                    "sum"
+                )
             )
             .reset_index()
             .sort_values(
@@ -374,12 +519,23 @@ if pagina == "📈 Dashboard":
             )
         )
 
+        # =================================================
+        # RANKING
+        # =================================================
+
+        st.subheader(
+            "🏆 Produtividade por colaborador"
+        )
+
         ranking = resumo.copy()
 
         ranking.insert(
             0,
             "Posição",
-            range(1, len(ranking) + 1)
+            range(
+                1,
+                len(ranking) + 1
+            )
         )
 
         ranking["Taxa de Êxito"] = ranking.apply(
@@ -420,7 +576,9 @@ if pagina == "📈 Dashboard":
 
         with col1:
 
-            st.subheader("🏆 Ranking de produtividade")
+            st.subheader(
+                "🏆 Ranking de produtividade"
+            )
 
             fig = px.bar(
                 resumo,
@@ -447,7 +605,9 @@ if pagina == "📈 Dashboard":
 
         with col2:
 
-            st.subheader("📊 Produtividade por tipo")
+            st.subheader(
+                "📊 Produtividade por tipo"
+            )
 
             composicao = resumo.melt(
                 id_vars="colaborador",
@@ -487,16 +647,30 @@ if pagina == "📈 Dashboard":
         # EVOLUÇÃO
         # =================================================
 
-        st.subheader("📈 Evolução da produtividade")
+        st.subheader(
+            "📈 Evolução da produtividade"
+        )
 
         diario = (
             df_filtrado
             .groupby("data")
             .agg(
-                SYSVET_Erro=("sysvet_erro", "sum"),
-                SYSVET_Exito=("sysvet_exito", "sum"),
-                Faturado=("faturado", "sum"),
-                Total=("produtividade_total", "sum")
+                SYSVET_Erro=(
+                    "sysvet_erro",
+                    "sum"
+                ),
+                SYSVET_Exito=(
+                    "sysvet_exito",
+                    "sum"
+                ),
+                Faturado=(
+                    "faturado",
+                    "sum"
+                ),
+                Total=(
+                    "produtividade_total",
+                    "sum"
+                )
             )
             .reset_index()
         )
@@ -523,6 +697,64 @@ if pagina == "📈 Dashboard":
             use_container_width=True
         )
 
+        # =================================================
+        # DETALHAMENTO DO COLABORADOR
+        # =================================================
+
+        if (
+            colaborador_selecionado
+            != "👥 TODOS OS COLABORADORES"
+        ):
+
+            st.divider()
+
+            st.subheader(
+                f"👤 Detalhamento — "
+                f"{colaborador_selecionado}"
+            )
+
+            detalhes = df_filtrado[
+                [
+                    "data",
+                    "colaborador",
+                    "sysvet_erro",
+                    "sysvet_exito",
+                    "faturado",
+                    "total_sysvet",
+                    "produtividade_total",
+                    "taxa_exito"
+                ]
+            ].copy()
+
+            detalhes["data"] = (
+                detalhes["data"]
+                .dt.strftime("%d/%m/%Y")
+            )
+
+            detalhes["taxa_exito"] = (
+                detalhes["taxa_exito"]
+                .round(1)
+                .astype(str)
+                + "%"
+            )
+
+            detalhes.columns = [
+                "Data",
+                "Colaborador",
+                "SYSVET Erro",
+                "SYSVET Êxito",
+                "Faturado",
+                "Total SYSVET",
+                "Produtividade Total",
+                "Taxa de Êxito"
+            ]
+
+            st.dataframe(
+                detalhes,
+                use_container_width=True,
+                hide_index=True
+            )
+
 
 # =========================================================
 # LANÇAR PRODUTIVIDADE
@@ -530,7 +762,9 @@ if pagina == "📈 Dashboard":
 
 elif pagina == "📝 Lançar produtividade":
 
-    st.title("📝 Lançar produtividade")
+    st.title(
+        "📝 Lançar produtividade"
+    )
 
     colaboradores = buscar_colaboradores()
 
@@ -542,7 +776,9 @@ elif pagina == "📝 Lançar produtividade":
 
     else:
 
-        with st.form("form_produtividade"):
+        with st.form(
+            "form_produtividade"
+        ):
 
             data_lancamento = st.date_input(
                 "📅 Data",
@@ -590,7 +826,8 @@ elif pagina == "📝 Lançar produtividade":
             )
 
             st.info(
-                f"📊 Produtividade total: **{total}**"
+                f"📊 Produtividade total: "
+                f"**{total}**"
             )
 
             salvar = st.form_submit_button(
@@ -627,7 +864,7 @@ elif pagina == "📝 Lançar produtividade":
                 conn.close()
 
                 st.success(
-                    "✅ Produtividade registrada com sucesso!"
+                    "✅ Produtividade registrada!"
                 )
 
                 st.rerun()
@@ -639,9 +876,13 @@ elif pagina == "📝 Lançar produtividade":
 
 elif pagina == "👥 Colaboradores":
 
-    st.title("👥 Cadastro de colaboradores")
+    st.title(
+        "👥 Cadastro de colaboradores"
+    )
 
-    with st.form("form_colaborador"):
+    with st.form(
+        "form_colaborador"
+    ):
 
         nome = st.text_input(
             "Nome do colaborador"
@@ -678,7 +919,7 @@ elif pagina == "👥 Colaboradores":
                     conn.close()
 
                     st.success(
-                        f"✅ {nome} cadastrado com sucesso!"
+                        f"✅ {nome} cadastrado!"
                     )
 
                     st.rerun()
@@ -691,11 +932,15 @@ elif pagina == "👥 Colaboradores":
 
     st.divider()
 
-    st.subheader("Colaboradores cadastrados")
-
     colaboradores = buscar_colaboradores()
 
-    if not colaboradores.empty:
+    if colaboradores.empty:
+
+        st.info(
+            "Nenhum colaborador cadastrado."
+        )
+
+    else:
 
         st.dataframe(
             colaboradores[
@@ -705,12 +950,6 @@ elif pagina == "👥 Colaboradores":
             hide_index=True
         )
 
-    else:
-
-        st.info(
-            "Nenhum colaborador cadastrado."
-        )
-
 
 # =========================================================
 # HISTÓRICO
@@ -718,7 +957,9 @@ elif pagina == "👥 Colaboradores":
 
 elif pagina == "📋 Histórico":
 
-    st.title("📋 Histórico de produtividade")
+    st.title(
+        "📋 Histórico de produtividade"
+    )
 
     df = buscar_produtividade()
 
@@ -735,12 +976,7 @@ elif pagina == "📋 Histórico":
         # =================================================
 
         st.subheader(
-            "🗑️ Excluir todos os registros de um dia"
-        )
-
-        st.warning(
-            "⚠️ Esta operação excluirá TODOS os "
-            "lançamentos da data selecionada."
+            "🗑️ Excluir registros por data"
         )
 
         data_exclusao = st.date_input(
@@ -750,10 +986,13 @@ elif pagina == "📋 Histórico":
         )
 
         registros_data = df[
-            df["data"].dt.date == data_exclusao
-        ].copy()
+            df["data"].dt.date
+            == data_exclusao
+        ]
 
-        quantidade = len(registros_data)
+        quantidade = len(
+            registros_data
+        )
 
         st.metric(
             "📋 Registros encontrados",
@@ -762,47 +1001,16 @@ elif pagina == "📋 Histórico":
 
         if quantidade > 0:
 
-            visualizar = registros_data[
-                [
-                    "id",
-                    "data",
-                    "colaborador",
-                    "sysvet_erro",
-                    "sysvet_exito",
-                    "faturado"
-                ]
-            ].copy()
-
-            visualizar["data"] = (
-                visualizar["data"]
-                .dt.strftime("%d/%m/%Y")
-            )
-
-            visualizar.columns = [
-                "ID",
-                "Data",
-                "Colaborador",
-                "SYSVET Erro",
-                "SYSVET Êxito",
-                "Faturado"
-            ]
-
-            st.dataframe(
-                visualizar,
-                use_container_width=True,
-                hide_index=True
-            )
-
             confirmar_data = st.checkbox(
-                "⚠️ Confirmo que desejo excluir TODOS "
-                "os registros desta data.",
+                "⚠️ Confirmo que desejo excluir "
+                "TODOS os registros desta data.",
                 key="confirmar_data"
             )
 
             if confirmar_data:
 
                 if st.button(
-                    "🗑️ EXCLUIR TODOS OS REGISTROS DESTA DATA",
+                    "🗑️ EXCLUIR TODOS OS REGISTROS DA DATA",
                     type="primary",
                     use_container_width=True
                 ):
@@ -833,24 +1041,24 @@ elif pagina == "📋 Histórico":
         else:
 
             st.info(
-                "ℹ️ Nenhum registro encontrado para esta data."
+                "Nenhum registro encontrado nessa data."
             )
-
-        # =================================================
-        # EDITAR / EXCLUIR INDIVIDUAL
-        # =================================================
 
         st.divider()
 
+        # =================================================
+        # EXCLUSÃO INDIVIDUAL
+        # =================================================
+
         st.subheader(
-            "✏️ Editar ou excluir lançamento individual"
+            "🗑️ Excluir lançamento individual"
         )
 
-        ids_disponiveis = df["id"].tolist()
+        ids = df["id"].tolist()
 
         id_selecionado = st.selectbox(
-            "Selecione o ID do lançamento",
-            ids_disponiveis
+            "Selecione o ID",
+            ids
         )
 
         registro = df[
@@ -860,198 +1068,50 @@ elif pagina == "📋 Histórico":
         st.info(
             f"👤 {registro['colaborador']} | "
             f"📅 {registro['data'].strftime('%d/%m/%Y')} | "
-            f"📊 Total: {registro['produtividade_total']}"
+            f"📊 Total: "
+            f"{registro['produtividade_total']}"
         )
 
-        acao = st.radio(
-            "Ação",
-            [
-                "✏️ Editar lançamento",
-                "🗑️ Excluir lançamento"
-            ],
-            horizontal=True
+        confirmar = st.checkbox(
+            "Confirmo que desejo excluir este lançamento."
         )
 
-        # =================================================
-        # EDITAR
-        # =================================================
+        if confirmar:
 
-        if acao == "✏️ Editar lançamento":
+            if st.button(
+                "🗑️ EXCLUIR LANÇAMENTO",
+                type="primary",
+                use_container_width=True
+            ):
 
-            colaboradores = buscar_colaboradores()
+                conn = conectar()
 
-            lista_colaboradores = (
-                colaboradores["nome"].tolist()
-            )
-
-            if lista_colaboradores:
-
-                indice_colaborador = (
-                    lista_colaboradores.index(
-                        registro["colaborador"]
-                    )
+                conn.execute(
+                    """
+                    DELETE FROM produtividade
+                    WHERE id = ?
+                    """,
+                    (int(id_selecionado),)
                 )
 
-                with st.form("form_editar_registro"):
+                conn.commit()
+                conn.close()
 
-                    nova_data = st.date_input(
-                        "📅 Data",
-                        value=registro["data"].date()
-                    )
+                st.success(
+                    "✅ Lançamento excluído!"
+                )
 
-                    novo_colaborador = st.selectbox(
-                        "👤 Colaborador",
-                        lista_colaboradores,
-                        index=indice_colaborador
-                    )
+                st.rerun()
 
-                    col1, col2, col3 = st.columns(3)
-
-                    with col1:
-
-                        novo_erro = st.number_input(
-                            "❌ SYSVET com erro",
-                            min_value=0,
-                            value=int(
-                                registro["sysvet_erro"]
-                            ),
-                            step=1
-                        )
-
-                    with col2:
-
-                        novo_exito = st.number_input(
-                            "✅ SYSVET com êxito",
-                            min_value=0,
-                            value=int(
-                                registro["sysvet_exito"]
-                            ),
-                            step=1
-                        )
-
-                    with col3:
-
-                        novo_faturado = st.number_input(
-                            "📁 Faturado",
-                            min_value=0,
-                            value=int(
-                                registro["faturado"]
-                            ),
-                            step=1
-                        )
-
-                    novo_total = (
-                        novo_erro +
-                        novo_exito +
-                        novo_faturado
-                    )
-
-                    st.info(
-                        f"📊 Nova produtividade total: "
-                        f"**{novo_total}**"
-                    )
-
-                    salvar_edicao = st.form_submit_button(
-                        "💾 SALVAR ALTERAÇÕES",
-                        use_container_width=True
-                    )
-
-                    if salvar_edicao:
-
-                        conn = conectar()
-
-                        conn.execute(
-                            """
-                            UPDATE produtividade
-                            SET
-                                data = ?,
-                                colaborador = ?,
-                                sysvet_erro = ?,
-                                sysvet_exito = ?,
-                                faturado = ?
-                            WHERE id = ?
-                            """,
-                            (
-                                str(nova_data),
-                                novo_colaborador,
-                                int(novo_erro),
-                                int(novo_exito),
-                                int(novo_faturado),
-                                int(id_selecionado)
-                            )
-                        )
-
-                        conn.commit()
-                        conn.close()
-
-                        st.success(
-                            f"✅ Registro ID "
-                            f"{id_selecionado} atualizado!"
-                        )
-
-                        st.rerun()
-
-        # =================================================
-        # EXCLUIR INDIVIDUAL
-        # =================================================
-
-        else:
-
-            st.warning(
-                f"⚠️ Você está prestes a excluir o "
-                f"registro ID **{id_selecionado}**."
-            )
-
-            confirmar_individual = st.checkbox(
-                "Confirmo que desejo excluir este lançamento."
-            )
-
-            if confirmar_individual:
-
-                if st.button(
-                    "🗑️ EXCLUIR ESTE LANÇAMENTO",
-                    type="primary",
-                    use_container_width=True
-                ):
-
-                    conn = conectar()
-
-                    cursor = conn.cursor()
-
-                    cursor.execute(
-                        """
-                        DELETE FROM produtividade
-                        WHERE id = ?
-                        """,
-                        (int(id_selecionado),)
-                    )
-
-                    excluido = cursor.rowcount
-
-                    conn.commit()
-                    conn.close()
-
-                    if excluido > 0:
-
-                        st.success(
-                            "✅ Lançamento excluído com sucesso!"
-                        )
-
-                    else:
-
-                        st.error(
-                            "❌ Registro não encontrado."
-                        )
-
-                    st.rerun()
+        st.divider()
 
         # =================================================
         # HISTÓRICO COMPLETO
         # =================================================
 
-        st.divider()
-
-        st.subheader("📋 Histórico completo")
+        st.subheader(
+            "📋 Histórico completo"
+        )
 
         historico = df[
             [
@@ -1104,14 +1164,16 @@ elif pagina == "📋 Histórico":
 
 elif pagina == "📥 Exportar":
 
-    st.title("📥 Exportar dados")
+    st.title(
+        "📥 Exportar dados"
+    )
 
     df = buscar_produtividade()
 
     if df.empty:
 
         st.info(
-            "Nenhum dado disponível para exportação."
+            "Nenhum dado disponível."
         )
 
     else:
@@ -1135,7 +1197,9 @@ elif pagina == "📥 Exportar":
             "Taxa de Êxito"
         ]
 
-        arquivo = "PRODUCT_produtividade.xlsx"
+        arquivo = (
+            "PRODUCT_produtividade.xlsx"
+        )
 
         exportar.to_excel(
             arquivo,
@@ -1143,15 +1207,106 @@ elif pagina == "📥 Exportar":
         )
 
         st.success(
-            "✅ Arquivo Excel pronto para download!"
+            "✅ Excel pronto!"
         )
 
-        with open(arquivo, "rb") as f:
+        with open(
+            arquivo,
+            "rb"
+        ) as f:
 
             st.download_button(
                 label="📥 BAIXAR EXCEL",
                 data=f,
-                file_name="PRODUCT_produtividade.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                file_name=arquivo,
+                mime=(
+                    "application/vnd.openxmlformats-"
+                    "officedocument.spreadsheetml.sheet"
+                ),
                 use_container_width=True
             )
+
+
+# =========================================================
+# ALTERAR SENHA
+# =========================================================
+
+elif pagina == "🔐 Alterar senha":
+
+    st.title(
+        "🔐 Alterar senha"
+    )
+
+    st.info(
+        "Aqui você pode alterar a senha utilizada "
+        "para entrar no PRODUCT."
+    )
+
+    with st.form(
+        "form_alterar_senha"
+    ):
+
+        senha_atual = st.text_input(
+            "🔑 Senha atual",
+            type="password"
+        )
+
+        nova_senha = st.text_input(
+            "🆕 Nova senha",
+            type="password"
+        )
+
+        confirmar_senha = st.text_input(
+            "🔁 Confirmar nova senha",
+            type="password"
+        )
+
+        alterar = st.form_submit_button(
+            "🔐 ALTERAR SENHA",
+            use_container_width=True
+        )
+
+        if alterar:
+
+            senha_correta = buscar_senha()
+
+            if senha_atual != senha_correta:
+
+                st.error(
+                    "❌ A senha atual está incorreta."
+                )
+
+            elif not nova_senha:
+
+                st.error(
+                    "❌ Digite uma nova senha."
+                )
+
+            elif nova_senha != confirmar_senha:
+
+                st.error(
+                    "❌ As novas senhas não são iguais."
+                )
+
+            elif len(nova_senha) < 4:
+
+                st.error(
+                    "❌ A senha deve ter pelo menos "
+                    "4 caracteres."
+                )
+
+            else:
+
+                alterar_senha(
+                    nova_senha
+                )
+
+                st.success(
+                    "✅ Senha alterada com sucesso!"
+                )
+
+                st.info(
+                    "A próxima vez que entrar no "
+                    "sistema, utilize a nova senha."
+                )
+
