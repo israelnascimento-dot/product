@@ -58,9 +58,10 @@ def criar_banco():
         )
     """)
 
-    cursor.execute(
-        "SELECT COUNT(*) FROM configuracoes"
-    )
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM configuracoes
+    """)
 
     quantidade = cursor.fetchone()[0]
 
@@ -288,6 +289,11 @@ if not st.session_state.modo_noturno:
         background-color: white !important;
     }
 
+    div[data-testid="stTextInput"] input {
+        color: #172033 !important;
+        background-color: white !important;
+    }
+
     .stButton > button {
         border-radius: 10px;
         font-weight: 700;
@@ -374,12 +380,6 @@ else:
         font-weight: 800;
     }
 
-    div[data-testid="stMetricDelta"] {
-        color: #94a3b8 !important;
-    }
-
-    /* INPUTS */
-
     div[data-baseweb="input"] {
         background-color: #1e293b !important;
         border: 1px solid #475569 !important;
@@ -396,8 +396,6 @@ else:
         color: #94a3b8 !important;
     }
 
-    /* SELECTBOX */
-
     div[data-baseweb="select"] > div {
         background-color: #1e293b !important;
         border: 1px solid #475569 !important;
@@ -412,8 +410,6 @@ else:
         color: #ffffff !important;
     }
 
-    /* DROPDOWN */
-
     ul[data-baseweb="menu"] {
         background-color: #1e293b !important;
     }
@@ -427,51 +423,33 @@ else:
         background-color: #334155 !important;
     }
 
-    /* NUMBER INPUT */
-
-    div[data-testid="stNumberInput"] {
-        background-color: transparent !important;
-    }
-
     div[data-testid="stNumberInput"] input {
         color: #ffffff !important;
         background-color: #1e293b !important;
     }
-
-    /* DATE INPUT */
 
     div[data-testid="stDateInput"] input {
         color: #ffffff !important;
         background-color: #1e293b !important;
     }
 
-    /* TEXT INPUT */
-
     div[data-testid="stTextInput"] input {
         color: #ffffff !important;
         background-color: #1e293b !important;
     }
-
-    /* PASSWORD */
 
     input[type="password"] {
         color: #ffffff !important;
         background-color: #1e293b !important;
     }
 
-    /* CHECKBOX */
-
     div[data-testid="stCheckbox"] label {
         color: #e5e7eb !important;
     }
 
-    /* RADIO */
-
     div[data-testid="stRadio"] label {
         color: #e5e7eb !important;
     }
-
-    /* MULTISELECT */
 
     div[data-baseweb="tag"] {
         background-color: #2563eb !important;
@@ -481,22 +459,16 @@ else:
         color: white !important;
     }
 
-    /* TABELAS */
-
     div[data-testid="stDataFrame"] {
         border: 1px solid #334155;
         border-radius: 12px;
     }
-
-    /* ALERTAS */
 
     div[data-testid="stAlert"] {
         background-color: #172033 !important;
         color: #e5e7eb !important;
         border-radius: 12px;
     }
-
-    /* BOTÕES */
 
     .stButton > button {
         border-radius: 10px;
@@ -518,13 +490,9 @@ else:
         color: white;
     }
 
-    /* DIVISORES */
-
     hr {
         border-color: #334155 !important;
     }
-
-    /* EXPANDERS */
 
     div[data-testid="stExpander"] {
         background-color: #111827 !important;
@@ -562,26 +530,35 @@ if not st.session_state.autenticado:
         f"""
         <div style="
             max-width:450px;
-            margin:80px auto;
+            margin:80px auto 30px auto;
             padding:35px;
             background:{fundo_login};
             border-radius:20px;
             box-shadow:0 10px 40px rgba(0,0,0,0.15);
             text-align:center;
         ">
-            <div style="font-size:65px;">📊</div>
+
+            <div style="
+                font-size:65px;
+                margin-bottom:10px;
+            ">
+                📊
+            </div>
+
             <h1 style="
                 color:{cor_titulo};
                 margin-bottom:5px;
             ">
                 PRODUCT
             </h1>
+
             <p style="
                 color:{cor_texto};
                 font-size:16px;
             ">
                 Sistema de Controle de Produtividade
             </p>
+
         </div>
         """,
         unsafe_allow_html=True
@@ -637,7 +614,7 @@ st.sidebar.divider()
 
 
 # =========================================================
-# BOTÃO MODO NOTURNO
+# MODO CLARO / ESCURO
 # =========================================================
 
 if st.session_state.modo_noturno:
@@ -663,6 +640,10 @@ if st.sidebar.button(
 
 st.sidebar.divider()
 
+
+# =========================================================
+# MENU
+# =========================================================
 
 pagina = st.sidebar.radio(
     "MENU",
@@ -716,9 +697,9 @@ if pagina == "📈 Dashboard":
 
     st.divider()
 
-    # -----------------------------------------------------
+    # =====================================================
     # FILTROS
-    # -----------------------------------------------------
+    # =====================================================
 
     st.subheader(
         "🔎 Filtros"
@@ -736,9 +717,12 @@ if pagina == "📈 Dashboard":
 
         colaborador = st.selectbox(
             "👤 Colaborador",
-            ["Todos os colaboradores"]
+            [
+                "Todos os colaboradores"
+            ]
             +
-            lista_colaboradores
+            lista_colaboradores,
+            key="dashboard_colaborador"
         )
 
     data_min = df["data"].min().date()
@@ -750,7 +734,8 @@ if pagina == "📈 Dashboard":
             "📅 Período",
             value=(data_min, data_max),
             min_value=data_min,
-            max_value=data_max
+            max_value=data_max,
+            key="dashboard_periodo"
         )
 
     with col3:
@@ -758,15 +743,15 @@ if pagina == "📈 Dashboard":
         st.write("")
 
         if st.button(
-            "🔄 Atualizar",
+            "🔄 Atualizar Dashboard",
             use_container_width=True
         ):
 
             st.rerun()
 
-    # -----------------------------------------------------
-    # FILTRO DATA
-    # -----------------------------------------------------
+    # =====================================================
+    # FILTRO DE DATA
+    # =====================================================
 
     if (
         isinstance(periodo, tuple)
@@ -785,9 +770,9 @@ if pagina == "📈 Dashboard":
 
         df_filtrado = df.copy()
 
-    # -----------------------------------------------------
-    # FILTRO COLABORADOR
-    # -----------------------------------------------------
+    # =====================================================
+    # FILTRO DE COLABORADOR
+    # =====================================================
 
     if colaborador != "Todos os colaboradores":
 
@@ -805,9 +790,9 @@ if pagina == "📈 Dashboard":
 
         st.stop()
 
-    # -----------------------------------------------------
+    # =====================================================
     # INDICADORES
-    # -----------------------------------------------------
+    # =====================================================
 
     erro = int(
         df_filtrado["sysvet_erro"].sum()
@@ -845,9 +830,9 @@ if pagina == "📈 Dashboard":
         else 0
     )
 
-    # -----------------------------------------------------
+    # =====================================================
     # CARDS
-    # -----------------------------------------------------
+    # =====================================================
 
     st.subheader(
         "📌 Indicadores"
@@ -882,9 +867,9 @@ if pagina == "📈 Dashboard":
 
     st.divider()
 
-    # -----------------------------------------------------
-    # INDICAÇÃO DO FILTRO
-    # -----------------------------------------------------
+    # =====================================================
+    # COLABORADOR SELECIONADO
+    # =====================================================
 
     if colaborador == "Todos os colaboradores":
 
@@ -898,9 +883,9 @@ if pagina == "📈 Dashboard":
             f"👤 Visualizando somente: {colaborador}"
         )
 
-    # -----------------------------------------------------
-    # RESUMO
-    # -----------------------------------------------------
+    # =====================================================
+    # RANKING
+    # =====================================================
 
     resumo = (
         df_filtrado
@@ -929,10 +914,6 @@ if pagina == "📈 Dashboard":
             ascending=False
         )
     )
-
-    # -----------------------------------------------------
-    # RANKING
-    # -----------------------------------------------------
 
     st.subheader(
         "🏆 Ranking de produtividade"
@@ -965,9 +946,9 @@ if pagina == "📈 Dashboard":
         use_container_width=True
     )
 
-    # -----------------------------------------------------
+    # =====================================================
     # GRÁFICOS
-    # -----------------------------------------------------
+    # =====================================================
 
     col1, col2 = st.columns(2)
 
@@ -1058,9 +1039,9 @@ if pagina == "📈 Dashboard":
             use_container_width=True
         )
 
-    # -----------------------------------------------------
+    # =====================================================
     # DETALHAMENTO INDIVIDUAL
-    # -----------------------------------------------------
+    # =====================================================
 
     if colaborador != "Todos os colaboradores":
 
@@ -1110,6 +1091,237 @@ if pagina == "📈 Dashboard":
             use_container_width=True,
             hide_index=True
         )
+
+    # =====================================================
+    # GERENCIAR REGISTROS NO DASHBOARD
+    # =====================================================
+
+    st.divider()
+
+    st.subheader(
+        "🗑️ Gerenciar registros"
+    )
+
+    st.warning(
+        "⚠️ Atenção: as exclusões são permanentes."
+    )
+
+    col1, col2 = st.columns(2)
+
+    # =====================================================
+    # EXCLUIR POR DATA
+    # =====================================================
+
+    with col1:
+
+        st.markdown(
+            "### 📅 Excluir registros por data"
+        )
+
+        data_excluir = st.date_input(
+            "Selecione a data",
+            value=date.today(),
+            key="dashboard_data_excluir"
+        )
+
+        registros_data = df[
+            df["data"].dt.date == data_excluir
+        ].copy()
+
+        if registros_data.empty:
+
+            st.info(
+                "Nenhum registro encontrado nessa data."
+            )
+
+        else:
+
+            quantidade = len(
+                registros_data
+            )
+
+            total_dia = int(
+                registros_data[
+                    "produtividade_total"
+                ].sum()
+            )
+
+            st.error(
+                f"🚨 Existem {quantidade} "
+                f"registro(s) nessa data."
+            )
+
+            st.write(
+                f"📊 Produtividade total: **{total_dia:,}**"
+            )
+
+            colaboradores_dia = ", ".join(
+                registros_data[
+                    "colaborador"
+                ]
+                .unique()
+                .tolist()
+            )
+
+            st.write(
+                f"👥 Colaboradores: **{colaboradores_dia}**"
+            )
+
+            st.write(
+                "Lançamentos que serão excluídos:"
+            )
+
+            tabela_exclusao = registros_data[
+                [
+                    "id",
+                    "colaborador",
+                    "sysvet_erro",
+                    "sysvet_exito",
+                    "faturado",
+                    "produtividade_total"
+                ]
+            ].copy()
+
+            tabela_exclusao.columns = [
+                "ID",
+                "Colaborador",
+                "SYSVET Erro",
+                "SYSVET Êxito",
+                "Faturado",
+                "Total"
+            ]
+
+            st.dataframe(
+                tabela_exclusao,
+                use_container_width=True,
+                hide_index=True
+            )
+
+            confirmar_data = st.checkbox(
+                "Confirmo que desejo excluir TODOS os registros desta data.",
+                key="confirmar_data_dashboard"
+            )
+
+            if st.button(
+                "🗑️ EXCLUIR TODOS DA DATA",
+                type="primary",
+                use_container_width=True,
+                key="excluir_data_dashboard"
+            ):
+
+                if not confirmar_data:
+
+                    st.error(
+                        "⚠️ Marque a confirmação antes de excluir."
+                    )
+
+                else:
+
+                    conn = conectar()
+
+                    cursor = conn.cursor()
+
+                    cursor.execute(
+                        """
+                        DELETE FROM produtividade
+                        WHERE data = ?
+                        """,
+                        (str(data_excluir),)
+                    )
+
+                    quantidade_excluida = (
+                        cursor.rowcount
+                    )
+
+                    conn.commit()
+                    conn.close()
+
+                    st.success(
+                        f"✅ {quantidade_excluida} "
+                        "registro(s) excluído(s)!"
+                    )
+
+                    st.rerun()
+
+    # =====================================================
+    # EXCLUIR INDIVIDUAL
+    # =====================================================
+
+    with col2:
+
+        st.markdown(
+            "### 🗑️ Excluir lançamento individual"
+        )
+
+        ids_disponiveis = (
+            df["id"]
+            .tolist()
+        )
+
+        id_excluir = st.selectbox(
+            "Selecione o ID",
+            ids_disponiveis,
+            key="dashboard_id_excluir"
+        )
+
+        registro_excluir = df[
+            df["id"] == id_excluir
+        ].iloc[0]
+
+        st.info(
+            f"""
+👤 Colaborador: **{registro_excluir['colaborador']}**
+
+📅 Data: **{registro_excluir['data'].strftime('%d/%m/%Y')}**
+
+❌ SYSVET Erro: **{int(registro_excluir['sysvet_erro'])}**
+
+✅ SYSVET Êxito: **{int(registro_excluir['sysvet_exito'])}**
+
+📁 Faturado: **{int(registro_excluir['faturado'])}**
+
+📊 Total: **{int(registro_excluir['produtividade_total'])}**
+"""
+        )
+
+        confirmar_individual = st.checkbox(
+            "Confirmo que desejo excluir este lançamento.",
+            key="confirmar_individual_dashboard"
+        )
+
+        if st.button(
+            "🗑️ EXCLUIR LANÇAMENTO",
+            type="primary",
+            use_container_width=True,
+            key="excluir_individual_dashboard"
+        ):
+
+            if not confirmar_individual:
+
+                st.error(
+                    "⚠️ Marque a confirmação antes de excluir."
+                )
+
+            else:
+
+                conn = conectar()
+
+                conn.execute(
+                    """
+                    DELETE FROM produtividade
+                    WHERE id = ?
+                    """,
+                    (int(id_excluir),)
+                )
+
+                conn.commit()
+                conn.close()
+
+                st.success(
+                    "✅ Lançamento excluído com sucesso!"
+                )
+
+                st.rerun()
 
 
 # =========================================================
@@ -1188,7 +1400,7 @@ elif pagina == "📝 Lançar produtividade":
             )
 
             st.info(
-                f"📊 Produtividade total: {total}"
+                f"📊 Produtividade total: **{total}**"
             )
 
             salvar = st.form_submit_button(
@@ -1333,18 +1545,14 @@ elif pagina == "📋 Histórico":
 
     else:
 
-        # -------------------------------------------------
-        # EXCLUSÃO POR DATA
-        # -------------------------------------------------
-
         st.subheader(
-            "🗑️ Excluir registros de uma data"
+            "🗑️ Excluir registros por data"
         )
 
         data_exclusao = st.date_input(
             "📅 Selecione a data",
             value=date.today(),
-            key="data_exclusao"
+            key="historico_data_exclusao"
         )
 
         registros_data = df[
@@ -1399,17 +1607,25 @@ elif pagina == "📋 Histórico":
                 hide_index=True
             )
 
-            confirmar_data = st.checkbox(
-                "Confirmo que quero excluir todos os registros dessa data."
+            confirmar = st.checkbox(
+                "Confirmo que quero excluir todos os registros desta data.",
+                key="confirmar_exclusao_historico"
             )
 
-            if confirmar_data:
+            if st.button(
+                "🗑️ EXCLUIR TODOS OS REGISTROS DA DATA",
+                type="primary",
+                use_container_width=True,
+                key="botao_exclusao_historico"
+            ):
 
-                if st.button(
-                    "🗑️ EXCLUIR TODOS OS REGISTROS DA DATA",
-                    type="primary",
-                    use_container_width=True
-                ):
+                if not confirmar:
+
+                    st.error(
+                        "⚠️ Marque a confirmação."
+                    )
+
+                else:
 
                     conn = conectar()
 
@@ -1423,9 +1639,7 @@ elif pagina == "📋 Histórico":
                         (str(data_exclusao),)
                     )
 
-                    quantidade_excluida = (
-                        cursor.rowcount
-                    )
+                    quantidade_excluida = cursor.rowcount
 
                     conn.commit()
                     conn.close()
@@ -1439,10 +1653,6 @@ elif pagina == "📋 Histórico":
 
         st.divider()
 
-        # -------------------------------------------------
-        # EXCLUSÃO INDIVIDUAL
-        # -------------------------------------------------
-
         st.subheader(
             "🗑️ Excluir lançamento individual"
         )
@@ -1451,7 +1661,8 @@ elif pagina == "📋 Histórico":
 
         id_escolhido = st.selectbox(
             "Selecione o ID",
-            ids
+            ids,
+            key="historico_id"
         )
 
         registro = df[
@@ -1468,16 +1679,24 @@ elif pagina == "📋 Histórico":
         )
 
         confirmar_individual = st.checkbox(
-            "Confirmo a exclusão deste lançamento."
+            "Confirmo a exclusão deste lançamento.",
+            key="confirmar_individual_historico"
         )
 
-        if confirmar_individual:
+        if st.button(
+            "🗑️ EXCLUIR LANÇAMENTO",
+            type="primary",
+            use_container_width=True,
+            key="botao_individual_historico"
+        ):
 
-            if st.button(
-                "🗑️ EXCLUIR LANÇAMENTO",
-                type="primary",
-                use_container_width=True
-            ):
+            if not confirmar_individual:
+
+                st.error(
+                    "⚠️ Marque a confirmação."
+                )
+
+            else:
 
                 conn = conectar()
 
@@ -1499,10 +1718,6 @@ elif pagina == "📋 Histórico":
                 st.rerun()
 
         st.divider()
-
-        # -------------------------------------------------
-        # HISTÓRICO
-        # -------------------------------------------------
 
         st.subheader(
             "📋 Todos os lançamentos"
@@ -1748,5 +1963,3 @@ elif pagina == "🔐 Alterar senha":
                 st.success(
                     "✅ Senha alterada com sucesso!"
                 )
-
-
