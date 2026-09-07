@@ -21,86 +21,6 @@ DB = "produtividade.db"
 
 
 # =========================================================
-# ESTILO VISUAL
-# =========================================================
-
-st.markdown("""
-<style>
-
-.stApp {
-    background-color: #f4f7fb;
-}
-
-[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #0f172a, #1e3a8a);
-}
-
-[data-testid="stSidebar"] * {
-    color: white !important;
-}
-
-h1 {
-    color: #173b8f;
-    font-weight: 800;
-}
-
-h2 {
-    color: #173b8f;
-}
-
-h3 {
-    color: #1e3a8a;
-}
-
-div[data-testid="stMetric"] {
-    background-color: white;
-    padding: 18px;
-    border-radius: 15px;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-}
-
-div[data-testid="stMetricValue"] {
-    color: #173b8f;
-    font-weight: 800;
-}
-
-.stButton > button {
-    border-radius: 10px;
-    font-weight: 700;
-}
-
-.stDownloadButton > button {
-    border-radius: 10px;
-    font-weight: 700;
-}
-
-div[data-testid="stDataFrame"] {
-    border-radius: 12px;
-}
-
-div[data-baseweb="input"] {
-    border-radius: 10px;
-}
-
-div[data-baseweb="select"] {
-    border-radius: 10px;
-}
-
-.login-box {
-    max-width: 450px;
-    margin: 80px auto;
-    padding: 35px;
-    background: white;
-    border-radius: 20px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.10);
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-
-# =========================================================
 # BANCO DE DADOS
 # =========================================================
 
@@ -163,7 +83,7 @@ criar_banco()
 
 
 # =========================================================
-# SENHA
+# FUNÇÕES
 # =========================================================
 
 def buscar_senha():
@@ -205,10 +125,6 @@ def alterar_senha(nova_senha):
     conn.close()
 
 
-# =========================================================
-# COLABORADORES
-# =========================================================
-
 def buscar_colaboradores():
 
     conn = conectar()
@@ -227,10 +143,6 @@ def buscar_colaboradores():
     return df
 
 
-# =========================================================
-# PRODUTIVIDADE
-# =========================================================
-
 def buscar_produtividade():
 
     conn = conectar()
@@ -248,7 +160,9 @@ def buscar_produtividade():
 
     if not df.empty:
 
-        df["data"] = pd.to_datetime(df["data"])
+        df["data"] = pd.to_datetime(
+            df["data"]
+        )
 
         df["total_sysvet"] = (
             df["sysvet_erro"]
@@ -282,47 +196,402 @@ def buscar_produtividade():
 
 
 # =========================================================
+# MODO VISUAL
+# =========================================================
+
+if "modo_noturno" not in st.session_state:
+    st.session_state.modo_noturno = False
+
+
+# =========================================================
+# CSS - MODO CLARO
+# =========================================================
+
+if not st.session_state.modo_noturno:
+
+    st.markdown("""
+    <style>
+
+    .stApp {
+        background-color: #f4f7fb;
+        color: #172033;
+    }
+
+    [data-testid="stSidebar"] {
+        background: linear-gradient(
+            180deg,
+            #0f172a 0%,
+            #173b8f 100%
+        );
+    }
+
+    [data-testid="stSidebar"] * {
+        color: white !important;
+    }
+
+    h1 {
+        color: #173b8f !important;
+        font-weight: 800;
+    }
+
+    h2, h3 {
+        color: #1e3a8a !important;
+    }
+
+    p, label, span {
+        color: #263247;
+    }
+
+    div[data-testid="stMetric"] {
+        background: white;
+        padding: 18px;
+        border-radius: 15px;
+        border: 1px solid #e1e7ef;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+    }
+
+    div[data-testid="stMetricLabel"] {
+        color: #64748b !important;
+    }
+
+    div[data-testid="stMetricValue"] {
+        color: #173b8f !important;
+        font-weight: 800;
+    }
+
+    div[data-baseweb="input"] {
+        background-color: white !important;
+        border-radius: 10px;
+    }
+
+    div[data-baseweb="input"] input {
+        color: #172033 !important;
+        background-color: white !important;
+    }
+
+    div[data-baseweb="select"] > div {
+        background-color: white !important;
+        color: #172033 !important;
+    }
+
+    div[data-baseweb="select"] span {
+        color: #172033 !important;
+    }
+
+    div[data-testid="stNumberInput"] input {
+        color: #172033 !important;
+        background-color: white !important;
+    }
+
+    div[data-testid="stDateInput"] input {
+        color: #172033 !important;
+        background-color: white !important;
+    }
+
+    .stButton > button {
+        border-radius: 10px;
+        font-weight: 700;
+    }
+
+    .stDownloadButton > button {
+        border-radius: 10px;
+        font-weight: 700;
+    }
+
+    div[data-testid="stDataFrame"] {
+        border-radius: 12px;
+    }
+
+    </style>
+    """, unsafe_allow_html=True)
+
+
+# =========================================================
+# CSS - MODO NOTURNO
+# =========================================================
+
+else:
+
+    st.markdown("""
+    <style>
+
+    .stApp {
+        background-color: #0b1120;
+        color: #e5e7eb;
+    }
+
+    [data-testid="stHeader"] {
+        background-color: #0b1120;
+    }
+
+    [data-testid="stSidebar"] {
+        background: linear-gradient(
+            180deg,
+            #020617 0%,
+            #111827 100%
+        );
+    }
+
+    [data-testid="stSidebar"] * {
+        color: #f8fafc !important;
+    }
+
+    h1 {
+        color: #60a5fa !important;
+        font-weight: 800;
+    }
+
+    h2, h3 {
+        color: #93c5fd !important;
+    }
+
+    p {
+        color: #cbd5e1 !important;
+    }
+
+    label {
+        color: #e5e7eb !important;
+    }
+
+    span {
+        color: #e5e7eb;
+    }
+
+    div[data-testid="stMetric"] {
+        background-color: #111827 !important;
+        padding: 18px;
+        border-radius: 15px;
+        border: 1px solid #263244;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.35);
+    }
+
+    div[data-testid="stMetricLabel"] {
+        color: #94a3b8 !important;
+    }
+
+    div[data-testid="stMetricValue"] {
+        color: #60a5fa !important;
+        font-weight: 800;
+    }
+
+    div[data-testid="stMetricDelta"] {
+        color: #94a3b8 !important;
+    }
+
+    /* INPUTS */
+
+    div[data-baseweb="input"] {
+        background-color: #1e293b !important;
+        border: 1px solid #475569 !important;
+        border-radius: 10px !important;
+    }
+
+    div[data-baseweb="input"] input {
+        color: #ffffff !important;
+        background-color: #1e293b !important;
+        caret-color: #60a5fa !important;
+    }
+
+    div[data-baseweb="input"] input::placeholder {
+        color: #94a3b8 !important;
+    }
+
+    /* SELECTBOX */
+
+    div[data-baseweb="select"] > div {
+        background-color: #1e293b !important;
+        border: 1px solid #475569 !important;
+        color: #ffffff !important;
+    }
+
+    div[data-baseweb="select"] span {
+        color: #ffffff !important;
+    }
+
+    div[data-baseweb="select"] input {
+        color: #ffffff !important;
+    }
+
+    /* DROPDOWN */
+
+    ul[data-baseweb="menu"] {
+        background-color: #1e293b !important;
+    }
+
+    li[data-baseweb="option"] {
+        background-color: #1e293b !important;
+        color: #ffffff !important;
+    }
+
+    li[data-baseweb="option"]:hover {
+        background-color: #334155 !important;
+    }
+
+    /* NUMBER INPUT */
+
+    div[data-testid="stNumberInput"] {
+        background-color: transparent !important;
+    }
+
+    div[data-testid="stNumberInput"] input {
+        color: #ffffff !important;
+        background-color: #1e293b !important;
+    }
+
+    /* DATE INPUT */
+
+    div[data-testid="stDateInput"] input {
+        color: #ffffff !important;
+        background-color: #1e293b !important;
+    }
+
+    /* TEXT INPUT */
+
+    div[data-testid="stTextInput"] input {
+        color: #ffffff !important;
+        background-color: #1e293b !important;
+    }
+
+    /* PASSWORD */
+
+    input[type="password"] {
+        color: #ffffff !important;
+        background-color: #1e293b !important;
+    }
+
+    /* CHECKBOX */
+
+    div[data-testid="stCheckbox"] label {
+        color: #e5e7eb !important;
+    }
+
+    /* RADIO */
+
+    div[data-testid="stRadio"] label {
+        color: #e5e7eb !important;
+    }
+
+    /* MULTISELECT */
+
+    div[data-baseweb="tag"] {
+        background-color: #2563eb !important;
+    }
+
+    div[data-baseweb="tag"] span {
+        color: white !important;
+    }
+
+    /* TABELAS */
+
+    div[data-testid="stDataFrame"] {
+        border: 1px solid #334155;
+        border-radius: 12px;
+    }
+
+    /* ALERTAS */
+
+    div[data-testid="stAlert"] {
+        background-color: #172033 !important;
+        color: #e5e7eb !important;
+        border-radius: 12px;
+    }
+
+    /* BOTÕES */
+
+    .stButton > button {
+        border-radius: 10px;
+        font-weight: 700;
+        background-color: #1e40af;
+        color: white;
+        border: 1px solid #3b82f6;
+    }
+
+    .stButton > button:hover {
+        background-color: #2563eb;
+        color: white;
+    }
+
+    .stDownloadButton > button {
+        border-radius: 10px;
+        font-weight: 700;
+        background-color: #1e40af;
+        color: white;
+    }
+
+    /* DIVISORES */
+
+    hr {
+        border-color: #334155 !important;
+    }
+
+    /* EXPANDERS */
+
+    div[data-testid="stExpander"] {
+        background-color: #111827 !important;
+        border: 1px solid #334155 !important;
+        border-radius: 12px;
+    }
+
+    </style>
+    """, unsafe_allow_html=True)
+
+
+# =========================================================
 # LOGIN
 # =========================================================
 
 if "autenticado" not in st.session_state:
-
     st.session_state.autenticado = False
 
 
 if not st.session_state.autenticado:
 
+    if st.session_state.modo_noturno:
+
+        fundo_login = "#111827"
+        cor_titulo = "#60a5fa"
+        cor_texto = "#cbd5e1"
+
+    else:
+
+        fundo_login = "#ffffff"
+        cor_titulo = "#173b8f"
+        cor_texto = "#64748b"
+
     st.markdown(
-        "<br><br>",
+        f"""
+        <div style="
+            max-width:450px;
+            margin:80px auto;
+            padding:35px;
+            background:{fundo_login};
+            border-radius:20px;
+            box-shadow:0 10px 40px rgba(0,0,0,0.15);
+            text-align:center;
+        ">
+            <div style="font-size:65px;">📊</div>
+            <h1 style="
+                color:{cor_titulo};
+                margin-bottom:5px;
+            ">
+                PRODUCT
+            </h1>
+            <p style="
+                color:{cor_texto};
+                font-size:16px;
+            ">
+                Sistema de Controle de Produtividade
+            </p>
+        </div>
+        """,
         unsafe_allow_html=True
     )
 
-    col_esq, col_login, col_dir = st.columns(
+    col1, col2, col3 = st.columns(
         [1, 2, 1]
     )
 
-    with col_login:
-
-        st.markdown(
-            "<div style='text-align:center;'>"
-            "<span style='font-size:60px;'>📊</span>"
-            "</div>",
-            unsafe_allow_html=True
-        )
-
-        st.markdown(
-            "<h1 style='text-align:center;'>PRODUCT</h1>",
-            unsafe_allow_html=True
-        )
-
-        st.markdown(
-            "<p style='text-align:center;color:#64748b;'>"
-            "Sistema de Controle de Produtividade"
-            "</p>",
-            unsafe_allow_html=True
-        )
-
-        st.divider()
+    with col2:
 
         senha = st.text_input(
             "🔐 Senha de acesso",
@@ -346,18 +615,14 @@ if not st.session_state.autenticado:
             else:
 
                 st.error(
-                    "Senha incorreta."
+                    "❌ Senha incorreta."
                 )
-
-        st.caption(
-            "Acesso restrito"
-        )
 
     st.stop()
 
 
 # =========================================================
-# SIDEBAR
+# MENU LATERAL
 # =========================================================
 
 st.sidebar.markdown(
@@ -369,6 +634,35 @@ st.sidebar.caption(
 )
 
 st.sidebar.divider()
+
+
+# =========================================================
+# BOTÃO MODO NOTURNO
+# =========================================================
+
+if st.session_state.modo_noturno:
+
+    texto_modo = "☀️ MODO CLARO"
+
+else:
+
+    texto_modo = "🌙 MODO NOTURNO"
+
+
+if st.sidebar.button(
+    texto_modo,
+    use_container_width=True
+):
+
+    st.session_state.modo_noturno = (
+        not st.session_state.modo_noturno
+    )
+
+    st.rerun()
+
+
+st.sidebar.divider()
+
 
 pagina = st.sidebar.radio(
     "MENU",
@@ -382,7 +676,9 @@ pagina = st.sidebar.radio(
     ]
 )
 
+
 st.sidebar.divider()
+
 
 if st.sidebar.button(
     "🚪 SAIR",
@@ -400,10 +696,12 @@ if st.sidebar.button(
 
 if pagina == "📈 Dashboard":
 
-    st.title("📊 Dashboard")
+    st.title(
+        "📊 Dashboard"
+    )
 
     st.caption(
-        "Visão geral da produtividade"
+        "Visão geral da produtividade da equipe"
     )
 
     df = buscar_produtividade()
@@ -411,7 +709,7 @@ if pagina == "📈 Dashboard":
     if df.empty:
 
         st.info(
-            "Ainda não existem registros de produtividade."
+            "Ainda não existem registros."
         )
 
         st.stop()
@@ -422,7 +720,9 @@ if pagina == "📈 Dashboard":
     # FILTROS
     # -----------------------------------------------------
 
-    st.subheader("🔎 Filtros")
+    st.subheader(
+        "🔎 Filtros"
+    )
 
     col1, col2, col3 = st.columns(3)
 
@@ -437,7 +737,8 @@ if pagina == "📈 Dashboard":
         colaborador = st.selectbox(
             "👤 Colaborador",
             ["Todos os colaboradores"]
-            + lista_colaboradores
+            +
+            lista_colaboradores
         )
 
     data_min = df["data"].min().date()
@@ -457,7 +758,7 @@ if pagina == "📈 Dashboard":
         st.write("")
 
         if st.button(
-            "🔄 Atualizar Dashboard",
+            "🔄 Atualizar",
             use_container_width=True
         ):
 
@@ -492,7 +793,8 @@ if pagina == "📈 Dashboard":
 
         df_filtrado = df_filtrado[
             df_filtrado["colaborador"]
-            == colaborador
+            ==
+            colaborador
         ].copy()
 
     if df_filtrado.empty:
@@ -519,7 +821,11 @@ if pagina == "📈 Dashboard":
         df_filtrado["faturado"].sum()
     )
 
-    total_sysvet = erro + exito
+    total_sysvet = (
+        erro
+        +
+        exito
+    )
 
     produtividade = (
         erro
@@ -543,7 +849,9 @@ if pagina == "📈 Dashboard":
     # CARDS
     # -----------------------------------------------------
 
-    st.subheader("📌 Indicadores")
+    st.subheader(
+        "📌 Indicadores"
+    )
 
     c1, c2, c3, c4, c5 = st.columns(5)
 
@@ -575,33 +883,45 @@ if pagina == "📈 Dashboard":
     st.divider()
 
     # -----------------------------------------------------
-    # MENSAGEM DO FILTRO
+    # INDICAÇÃO DO FILTRO
     # -----------------------------------------------------
 
     if colaborador == "Todos os colaboradores":
 
         st.success(
-            "👥 Dashboard mostrando toda a equipe."
+            "👥 Visualizando toda a equipe."
         )
 
     else:
 
         st.success(
-            f"👤 Dashboard individual: {colaborador}"
+            f"👤 Visualizando somente: {colaborador}"
         )
 
     # -----------------------------------------------------
-    # RESUMO POR COLABORADOR
+    # RESUMO
     # -----------------------------------------------------
 
     resumo = (
         df_filtrado
         .groupby("colaborador")
         .agg(
-            SYSVET_Erro=("sysvet_erro", "sum"),
-            SYSVET_Exito=("sysvet_exito", "sum"),
-            Faturado=("faturado", "sum"),
-            Total=("produtividade_total", "sum")
+            SYSVET_Erro=(
+                "sysvet_erro",
+                "sum"
+            ),
+            SYSVET_Exito=(
+                "sysvet_exito",
+                "sum"
+            ),
+            Faturado=(
+                "faturado",
+                "sum"
+            ),
+            Total=(
+                "produtividade_total",
+                "sum"
+            )
         )
         .reset_index()
         .sort_values(
@@ -611,11 +931,11 @@ if pagina == "📈 Dashboard":
     )
 
     # -----------------------------------------------------
-    # GRÁFICO RANKING
+    # RANKING
     # -----------------------------------------------------
 
     st.subheader(
-        "🏆 Produtividade por colaborador"
+        "🏆 Ranking de produtividade"
     )
 
     grafico = px.bar(
@@ -635,9 +955,9 @@ if pagina == "📈 Dashboard":
         height=430,
         xaxis_title="Colaborador",
         yaxis_title="Produtividade",
-        plot_bgcolor="white",
-        paper_bgcolor="white",
-        coloraxis_showscale=False
+        coloraxis_showscale=False,
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)"
     )
 
     st.plotly_chart(
@@ -685,7 +1005,7 @@ if pagina == "📈 Dashboard":
 
         pizza.update_layout(
             height=400,
-            paper_bgcolor="white"
+            paper_bgcolor="rgba(0,0,0,0)"
         )
 
         st.plotly_chart(
@@ -729,8 +1049,8 @@ if pagina == "📈 Dashboard":
             height=400,
             xaxis_title="Data",
             yaxis_title="Quantidade",
-            plot_bgcolor="white",
-            paper_bgcolor="white"
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)"
         )
 
         st.plotly_chart(
@@ -771,7 +1091,8 @@ if pagina == "📈 Dashboard":
             detalhes["taxa_exito"]
             .round(1)
             .astype(str)
-            + "%"
+            +
+            "%"
         )
 
         detalhes.columns = [
@@ -806,11 +1127,11 @@ elif pagina == "📝 Lançar produtividade":
     if colaboradores.empty:
 
         st.warning(
-            "Nenhum colaborador cadastrado."
+            "⚠️ Nenhum colaborador cadastrado."
         )
 
         st.info(
-            "Acesse '👥 Colaboradores' para cadastrar."
+            "Acesse o menu Colaboradores."
         )
 
     else:
@@ -999,7 +1320,7 @@ elif pagina == "👥 Colaboradores":
 elif pagina == "📋 Histórico":
 
     st.title(
-        "📋 Histórico"
+        "📋 Histórico de produtividade"
     )
 
     df = buscar_produtividade()
@@ -1028,7 +1349,8 @@ elif pagina == "📋 Histórico":
 
         registros_data = df[
             df["data"].dt.date
-            == data_exclusao
+            ==
+            data_exclusao
         ]
 
         if registros_data.empty:
@@ -1041,26 +1363,38 @@ elif pagina == "📋 Histórico":
 
             st.warning(
                 f"⚠️ Existem {len(registros_data)} "
-                f"registro(s) nessa data."
+                "registro(s) nessa data."
             )
 
+            visualizar = registros_data[
+                [
+                    "id",
+                    "data",
+                    "colaborador",
+                    "sysvet_erro",
+                    "sysvet_exito",
+                    "faturado",
+                    "produtividade_total"
+                ]
+            ].copy()
+
+            visualizar["data"] = (
+                visualizar["data"]
+                .dt.strftime("%d/%m/%Y")
+            )
+
+            visualizar.columns = [
+                "ID",
+                "Data",
+                "Colaborador",
+                "SYSVET Erro",
+                "SYSVET Êxito",
+                "Faturado",
+                "Produtividade Total"
+            ]
+
             st.dataframe(
-                registros_data[
-                    [
-                        "id",
-                        "data",
-                        "colaborador",
-                        "sysvet_erro",
-                        "sysvet_exito",
-                        "faturado",
-                        "produtividade_total"
-                    ]
-                ].assign(
-                    data=lambda x:
-                    x["data"].dt.strftime(
-                        "%d/%m/%Y"
-                    )
-                ),
+                visualizar,
                 use_container_width=True,
                 hide_index=True
             )
@@ -1089,14 +1423,16 @@ elif pagina == "📋 Histórico":
                         (str(data_exclusao),)
                     )
 
-                    quantidade_excluida = cursor.rowcount
+                    quantidade_excluida = (
+                        cursor.rowcount
+                    )
 
                     conn.commit()
                     conn.close()
 
                     st.success(
                         f"✅ {quantidade_excluida} "
-                        f"registro(s) excluído(s)."
+                        "registro(s) excluído(s)."
                     )
 
                     st.rerun()
@@ -1119,7 +1455,9 @@ elif pagina == "📋 Histórico":
         )
 
         registro = df[
-            df["id"] == id_escolhido
+            df["id"]
+            ==
+            id_escolhido
         ].iloc[0]
 
         st.info(
@@ -1163,7 +1501,7 @@ elif pagina == "📋 Histórico":
         st.divider()
 
         # -------------------------------------------------
-        # HISTÓRICO COMPLETO
+        # HISTÓRICO
         # -------------------------------------------------
 
         st.subheader(
@@ -1193,7 +1531,8 @@ elif pagina == "📋 Histórico":
             historico["taxa_exito"]
             .round(1)
             .astype(str)
-            + "%"
+            +
+            "%"
         )
 
         historico.columns = [
@@ -1243,13 +1582,17 @@ elif pagina == "📥 Exportar":
 
         colaborador_exportar = st.selectbox(
             "👤 Escolha o colaborador",
-            ["Todos os colaboradores"]
-            + colaboradores
+            [
+                "Todos os colaboradores"
+            ]
+            +
+            colaboradores
         )
 
         if (
             colaborador_exportar
-            == "Todos os colaboradores"
+            ==
+            "Todos os colaboradores"
         ):
 
             dados = df.copy()
@@ -1258,7 +1601,8 @@ elif pagina == "📥 Exportar":
 
             dados = df[
                 df["colaborador"]
-                == colaborador_exportar
+                ==
+                colaborador_exportar
             ].copy()
 
         exportar = dados.copy()
@@ -1342,7 +1686,7 @@ elif pagina == "🔐 Alterar senha":
     )
 
     st.info(
-        "Use esta tela para alterar a senha de acesso ao sistema."
+        "Altere a senha utilizada para entrar no sistema."
     )
 
     with st.form(
