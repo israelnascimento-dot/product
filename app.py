@@ -14,6 +14,9 @@ st.set_page_config(
     layout="wide"
 )
 
+st.title("📊 PRODUCT")
+st.subheader("Sistema de Controle de Produtividade")
+
 DB = "produtividade.db"
 
 
@@ -85,7 +88,7 @@ def buscar_produtividade():
         """
         SELECT *
         FROM produtividade
-        ORDER BY data DESC
+        ORDER BY data DESC, id DESC
         """,
         conn
     )
@@ -670,6 +673,326 @@ elif pagina == "📋 Histórico":
 
     else:
 
+        # =================================================
+        # EXCLUIR POR DATA
+        # =================================================
+
+        st.subheader("🗑️ Excluir todos os registros de um dia")
+
+        st.warning(
+            "⚠️ Esta opção excluirá TODOS os lançamentos "
+            "da data selecionada."
+        )
+
+        data_exclusao = st.date_input(
+            "📅 Selecione a data para exclusão",
+            value=date.today(),
+            key="data_exclusao"
+        )
+
+        registros_data = df[
+            df["data"].dt.date == data_exclusao
+        ].copy()
+
+        quantidade = len(registros_data)
+
+        st.metric(
+            "📋 Registros encontrados",
+            quantidade
+        )
+
+        if quantidade > 0:
+
+            visualizar = registros_data[
+                [
+                    "id",
+                    "data",
+                    "colaborador",
+                    "sysvet_erro",
+                    "sysvet_exito",
+                    "faturado"
+                ]
+            ].copy()
+
+            visualizar["data"] = (
+                visualizar["data"]
+                .dt.strftime("%d/%m/%Y")
+            )
+
+            visualizar.columns = [
+                "ID",
+                "Data",
+                "Colaborador",
+                "SYSVET Erro",
+                "SYSVET Êxito",
+                "Faturado"
+            ]
+
+            st.dataframe(
+                visualizar,
+                use_container_width=True,
+                hide_index=True
+            )
+
+            confirmar_data = st.checkbox(
+                "⚠️ Confirmo que desejo excluir TODOS "
+                "os registros desta data.",
+                key="confirmar_data"
+            )
+
+            if confirmar_data:
+
+                if st.button(
+                    "🗑️ EXCLUIR TODOS OS REGISTROS DESTA DATA",
+                    type="primary",
+                    use_container_width=True
+                ):
+
+                    conn = conectar()
+
+                    cursor = conn.cursor()
+
+                    cursor.execute(
+                        """
+                        DELETE FROM produtividade
+                        WHERE data = ?
+                        """,
+                        (str(data_exclusao),)
+                    )
+
+                    excluidos = cursor.rowcount
+
+                    conn.commit()
+                    conn.close()
+
+                    st.success(
+                        f"✅ {excluidos} registro(s) excluído(s) "
+                        f"do dia {data_exclusao.strftime('%d/%m/%Y')}."
+                    )
+
+                    st.rerun()
+
+        else:
+
+            st.info(
+                "ℹ️ Nenhum registro encontrado para esta data."
+            )
+
+        # =================================================
+        # EDITAR / EXCLUIR INDIVIDUAL
+        # =================================================
+
+        st.divider()
+
+        st.subheader("✏️ Editar ou excluir lançamento individual")
+
+        ids_disponiveis = df["id"].tolist()
+
+        id_selecionado = st.selectbox(
+            "Selecione o ID do lançamento",
+            ids_disponiveis,
+            key="id_edicao"
+        )
+
+        registro = df[
+            df["id"] == id_selecionado
+        ].iloc[0]
+
+        st.markdown(
+            f"""
+            **Registro selecionado**
+
+            - 👤 Colaborador: **{registro['colaborador']}**
+            - 📅 Data: **{registro['data'].strftime('%d/%m/%Y')}**
+            - ❌ SYSVET Erro: **{registro['sysvet_erro']}**
+            - ✅ SYSVET Êxito: **{registro['sysvet_exito']}**
+            - 📁 Faturado: **{registro['faturado']}**
+            """
+        )
+
+        acao = st.radio(
+            "O que deseja fazer?",
+            [
+                "✏️ Editar lançamento",
+                "🗑️ Excluir lançamento"
+            ],
+            horizontal=True,
+            key="acao_registro"
+        )
+
+        # =================================================
+        # EDITAR
+        # =================================================
+
+        if acao == "✏️ Editar lançamento":
+
+            colaboradores = buscar_colaboradores()
+
+            lista_colaboradores = (
+                colaboradores["nome"].tolist()
+            )
+
+            indice_colaborador = lista_colaboradores.index(
+                registro["colaborador"]
+            )
+
+            with st.form("form_editar_registro"):
+
+                nova_data = st.date_input(
+                    "📅 Data",
+                    value=registro["data"].date()
+                )
+
+                novo_colaborador = st.selectbox(
+                    "👤 Colaborador",
+                    lista_colaboradores,
+                    index=indice_colaborador
+                )
+
+                col1, col2, col3 = st.columns(3)
+
+                with col1:
+
+                    novo_erro = st.number_input(
+                        "❌ SYSVET com erro",
+                        min_value=0,
+                        value=int(registro["sysvet_erro"]),
+                        step=1
+                    )
+
+                with col2:
+
+                    novo_exito = st.number_input(
+                        "✅ SYSVET com êxito",
+                        min_value=0,
+                        value=int(registro["sysvet_exito"]),
+                        step=1
+                    )
+
+                with col3:
+
+                    novo_faturado = st.number_input(
+                        "📁 Faturado",
+                        min_value=0,
+                        value=int(registro["faturado"]),
+                        step=1
+                    )
+
+                novo_total = (
+                    novo_erro +
+                    novo_exito +
+                    novo_faturado
+                )
+
+                st.info(
+                    f"📊 Nova produtividade total: "
+                    f"**{novo_total}**"
+                )
+
+                salvar_edicao = st.form_submit_button(
+                    "💾 SALVAR ALTERAÇÕES",
+                    use_container_width=True
+                )
+
+                if salvar_edicao:
+
+                    conn = conectar()
+
+                    conn.execute(
+                        """
+                        UPDATE produtividade
+                        SET
+                            data = ?,
+                            colaborador = ?,
+                            sysvet_erro = ?,
+                            sysvet_exito = ?,
+                            faturado = ?
+                        WHERE id = ?
+                        """,
+                        (
+                            str(nova_data),
+                            novo_colaborador,
+                            int(novo_erro),
+                            int(novo_exito),
+                            int(novo_faturado),
+                            int(id_selecionado)
+                        )
+                    )
+
+                    conn.commit()
+                    conn.close()
+
+                    st.success(
+                        f"✅ Registro ID {id_selecionado} "
+                        "alterado com sucesso!"
+                    )
+
+                    st.rerun()
+
+        # =================================================
+        # EXCLUIR INDIVIDUAL
+        # =================================================
+
+        else:
+
+            st.warning(
+                f"⚠️ Você está prestes a excluir o "
+                f"registro ID **{id_selecionado}**."
+            )
+
+            confirmar_individual = st.checkbox(
+                "Confirmo que desejo excluir este lançamento.",
+                key="confirmar_individual"
+            )
+
+            if confirmar_individual:
+
+                if st.button(
+                    "🗑️ EXCLUIR ESTE LANÇAMENTO",
+                    type="primary",
+                    use_container_width=True
+                ):
+
+                    conn = conectar()
+
+                    cursor = conn.cursor()
+
+                    cursor.execute(
+                        """
+                        DELETE FROM produtividade
+                        WHERE id = ?
+                        """,
+                        (int(id_selecionado),)
+                    )
+
+                    excluido = cursor.rowcount
+
+                    conn.commit()
+                    conn.close()
+
+                    if excluido > 0:
+
+                        st.success(
+                            f"✅ Registro ID {id_selecionado} "
+                            "excluído com sucesso!"
+                        )
+
+                    else:
+
+                        st.error(
+                            "❌ O registro não foi encontrado."
+                        )
+
+                    st.rerun()
+
+        # =================================================
+        # HISTÓRICO COMPLETO
+        # =================================================
+
+        st.divider()
+
+        st.subheader("📋 Histórico completo")
+
         historico = df[
             [
                 "id",
@@ -757,6 +1080,10 @@ elif pagina == "📥 Exportar":
         exportar.to_excel(
             arquivo,
             index=False
+        )
+
+        st.success(
+            "✅ Arquivo Excel pronto para download!"
         )
 
         with open(arquivo, "rb") as f:
