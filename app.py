@@ -162,26 +162,21 @@ def buscar_produtividade():
         df["data"] = pd.to_datetime(df["data"])
 
         df["total_sysvet"] = (
-            df["sysvet_erro"]
-            +
+            df["sysvet_erro"] +
             df["sysvet_exito"]
         )
 
         df["produtividade_total"] = (
-            df["sysvet_erro"]
-            +
-            df["sysvet_exito"]
-            +
+            df["sysvet_erro"] +
+            df["sysvet_exito"] +
             df["faturado"]
         )
 
         df["taxa_exito"] = df.apply(
             lambda linha:
             (
-                linha["sysvet_exito"]
-                /
-                linha["total_sysvet"]
-                *
+                linha["sysvet_exito"] /
+                linha["total_sysvet"] *
                 100
             )
             if linha["total_sysvet"] > 0
@@ -206,303 +201,267 @@ if "modo_noturno" not in st.session_state:
 
 if not st.session_state.modo_noturno:
 
-    st.markdown(
-        """
-        <style>
+    st.markdown("""
+    <style>
 
-        .stApp {
-            background-color: #f4f7fb;
-            color: #172033;
-        }
+    .stApp {
+        background-color: #f4f7fb;
+        color: #172033;
+    }
 
-        [data-testid="stSidebar"] {
-            background: linear-gradient(
-                180deg,
-                #0f172a 0%,
-                #173b8f 100%
-            );
-        }
+    [data-testid="stSidebar"] {
+        background: linear-gradient(
+            180deg,
+            #0f172a 0%,
+            #173b8f 100%
+        );
+    }
 
-        [data-testid="stSidebar"] * {
-            color: white !important;
-        }
+    [data-testid="stSidebar"] * {
+        color: white !important;
+    }
 
-        h1 {
-            color: #173b8f !important;
-            font-weight: 800;
-        }
+    h1 {
+        color: #173b8f !important;
+        font-weight: 800;
+    }
 
-        h2,
-        h3 {
-            color: #1e3a8a !important;
-        }
+    h2, h3 {
+        color: #1e3a8a !important;
+    }
 
-        p,
-        label,
-        span {
-            color: #263247;
-        }
+    p, label {
+        color: #263247;
+    }
 
-        div[data-testid="stMetric"] {
-            background: white;
-            padding: 18px;
-            border-radius: 15px;
-            border: 1px solid #e1e7ef;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-        }
+    div[data-testid="stMetric"] {
+        background: white;
+        padding: 18px;
+        border-radius: 15px;
+        border: 1px solid #e1e7ef;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+    }
 
-        div[data-testid="stMetricLabel"] {
-            color: #64748b !important;
-        }
+    div[data-testid="stMetricLabel"] {
+        color: #64748b !important;
+    }
 
-        div[data-testid="stMetricValue"] {
-            color: #173b8f !important;
-            font-weight: 800;
-        }
+    div[data-testid="stMetricValue"] {
+        color: #173b8f !important;
+        font-weight: 800;
+    }
 
-        div[data-baseweb="input"] {
-            background-color: white !important;
-            border-radius: 10px;
-        }
+    div[data-baseweb="input"] {
+        background-color: white !important;
+        border-radius: 10px;
+    }
 
-        div[data-baseweb="input"] input {
-            color: #172033 !important;
-            background-color: white !important;
-        }
+    div[data-baseweb="input"] input {
+        color: #172033 !important;
+        background-color: white !important;
+    }
 
-        div[data-baseweb="select"] > div {
-            background-color: white !important;
-            color: #172033 !important;
-        }
+    div[data-baseweb="select"] > div {
+        background-color: white !important;
+        color: #172033 !important;
+    }
 
-        div[data-baseweb="select"] span {
-            color: #172033 !important;
-        }
+    div[data-baseweb="select"] span {
+        color: #172033 !important;
+    }
 
-        div[data-testid="stNumberInput"] input {
-            color: #172033 !important;
-            background-color: white !important;
-        }
+    div[data-testid="stNumberInput"] input {
+        color: #172033 !important;
+        background-color: white !important;
+    }
 
-        div[data-testid="stDateInput"] input {
-            color: #172033 !important;
-            background-color: white !important;
-        }
+    div[data-testid="stDateInput"] input {
+        color: #172033 !important;
+        background-color: white !important;
+    }
 
-        div[data-testid="stTextInput"] input {
-            color: #172033 !important;
-            background-color: white !important;
-        }
+    .stButton > button {
+        border-radius: 10px;
+        font-weight: 700;
+    }
 
-        .stButton > button {
-            border-radius: 10px;
-            font-weight: 700;
-        }
+    .stDownloadButton > button {
+        border-radius: 10px;
+        font-weight: 700;
+    }
 
-        .stDownloadButton > button {
-            border-radius: 10px;
-            font-weight: 700;
-        }
+    </style>
+    """, unsafe_allow_html=True)
 
-        div[data-testid="stDataFrame"] {
-            border-radius: 12px;
-        }
-
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
 
 else:
 
-    st.markdown(
-        """
-        <style>
+    st.markdown("""
+    <style>
 
-        .stApp {
-            background-color: #0b1120;
-            color: #e5e7eb;
-        }
+    .stApp {
+        background-color: #0b1120;
+        color: #e5e7eb;
+    }
 
-        [data-testid="stHeader"] {
-            background-color: #0b1120;
-        }
+    [data-testid="stHeader"] {
+        background-color: #0b1120;
+    }
 
-        [data-testid="stSidebar"] {
-            background: linear-gradient(
-                180deg,
-                #020617 0%,
-                #111827 100%
-            );
-        }
+    [data-testid="stSidebar"] {
+        background: linear-gradient(
+            180deg,
+            #020617 0%,
+            #111827 100%
+        );
+    }
 
-        [data-testid="stSidebar"] * {
-            color: #f8fafc !important;
-        }
+    [data-testid="stSidebar"] * {
+        color: #f8fafc !important;
+    }
 
-        h1 {
-            color: #60a5fa !important;
-            font-weight: 800;
-        }
+    h1 {
+        color: #60a5fa !important;
+        font-weight: 800;
+    }
 
-        h2,
-        h3 {
-            color: #93c5fd !important;
-        }
+    h2, h3 {
+        color: #93c5fd !important;
+    }
 
-        p {
-            color: #cbd5e1 !important;
-        }
+    p, label {
+        color: #cbd5e1 !important;
+    }
 
-        label {
-            color: #e5e7eb !important;
-        }
+    div[data-testid="stMetric"] {
+        background-color: #111827 !important;
+        padding: 18px;
+        border-radius: 15px;
+        border: 1px solid #263244;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.35);
+    }
 
-        span {
-            color: #e5e7eb;
-        }
+    div[data-testid="stMetricLabel"] {
+        color: #94a3b8 !important;
+    }
 
-        div[data-testid="stMetric"] {
-            background-color: #111827 !important;
-            padding: 18px;
-            border-radius: 15px;
-            border: 1px solid #263244;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.35);
-        }
+    div[data-testid="stMetricValue"] {
+        color: #60a5fa !important;
+        font-weight: 800;
+    }
 
-        div[data-testid="stMetricLabel"] {
-            color: #94a3b8 !important;
-        }
+    div[data-baseweb="input"] {
+        background-color: #1e293b !important;
+        border: 1px solid #475569 !important;
+        border-radius: 10px !important;
+    }
 
-        div[data-testid="stMetricValue"] {
-            color: #60a5fa !important;
-            font-weight: 800;
-        }
+    div[data-baseweb="input"] input {
+        color: #ffffff !important;
+        background-color: #1e293b !important;
+        caret-color: #60a5fa !important;
+    }
 
-        div[data-baseweb="input"] {
-            background-color: #1e293b !important;
-            border: 1px solid #475569 !important;
-            border-radius: 10px !important;
-        }
+    div[data-baseweb="select"] > div {
+        background-color: #1e293b !important;
+        border: 1px solid #475569 !important;
+        color: #ffffff !important;
+    }
 
-        div[data-baseweb="input"] input {
-            color: #ffffff !important;
-            background-color: #1e293b !important;
-            caret-color: #60a5fa !important;
-        }
+    div[data-baseweb="select"] span {
+        color: #ffffff !important;
+    }
 
-        div[data-baseweb="input"] input::placeholder {
-            color: #94a3b8 !important;
-        }
+    div[data-baseweb="select"] input {
+        color: #ffffff !important;
+    }
 
-        div[data-baseweb="select"] > div {
-            background-color: #1e293b !important;
-            border: 1px solid #475569 !important;
-            color: #ffffff !important;
-        }
+    ul[data-baseweb="menu"] {
+        background-color: #1e293b !important;
+    }
 
-        div[data-baseweb="select"] span {
-            color: #ffffff !important;
-        }
+    li[data-baseweb="option"] {
+        background-color: #1e293b !important;
+        color: #ffffff !important;
+    }
 
-        div[data-baseweb="select"] input {
-            color: #ffffff !important;
-        }
+    li[data-baseweb="option"]:hover {
+        background-color: #334155 !important;
+    }
 
-        ul[data-baseweb="menu"] {
-            background-color: #1e293b !important;
-        }
+    div[data-testid="stNumberInput"] input {
+        color: #ffffff !important;
+        background-color: #1e293b !important;
+    }
 
-        li[data-baseweb="option"] {
-            background-color: #1e293b !important;
-            color: #ffffff !important;
-        }
+    div[data-testid="stDateInput"] input {
+        color: #ffffff !important;
+        background-color: #1e293b !important;
+    }
 
-        li[data-baseweb="option"]:hover {
-            background-color: #334155 !important;
-        }
+    div[data-testid="stTextInput"] input {
+        color: #ffffff !important;
+        background-color: #1e293b !important;
+    }
 
-        div[data-testid="stNumberInput"] input {
-            color: #ffffff !important;
-            background-color: #1e293b !important;
-        }
+    input[type="password"] {
+        color: #ffffff !important;
+        background-color: #1e293b !important;
+    }
 
-        div[data-testid="stDateInput"] input {
-            color: #ffffff !important;
-            background-color: #1e293b !important;
-        }
+    div[data-testid="stCheckbox"] label {
+        color: #e5e7eb !important;
+    }
 
-        div[data-testid="stTextInput"] input {
-            color: #ffffff !important;
-            background-color: #1e293b !important;
-        }
+    div[data-testid="stRadio"] label {
+        color: #e5e7eb !important;
+    }
 
-        input[type="password"] {
-            color: #ffffff !important;
-            background-color: #1e293b !important;
-        }
+    div[data-baseweb="tag"] {
+        background-color: #2563eb !important;
+    }
 
-        div[data-testid="stCheckbox"] label {
-            color: #e5e7eb !important;
-        }
+    div[data-baseweb="tag"] span {
+        color: white !important;
+    }
 
-        div[data-testid="stRadio"] label {
-            color: #e5e7eb !important;
-        }
+    div[data-testid="stDataFrame"] {
+        border: 1px solid #334155;
+        border-radius: 12px;
+    }
 
-        div[data-baseweb="tag"] {
-            background-color: #2563eb !important;
-        }
+    div[data-testid="stAlert"] {
+        background-color: #172033 !important;
+        color: #e5e7eb !important;
+        border-radius: 12px;
+    }
 
-        div[data-baseweb="tag"] span {
-            color: white !important;
-        }
+    .stButton > button {
+        border-radius: 10px;
+        font-weight: 700;
+        background-color: #1e40af;
+        color: white;
+        border: 1px solid #3b82f6;
+    }
 
-        div[data-testid="stDataFrame"] {
-            border: 1px solid #334155;
-            border-radius: 12px;
-        }
+    .stButton > button:hover {
+        background-color: #2563eb;
+        color: white;
+    }
 
-        div[data-testid="stAlert"] {
-            background-color: #172033 !important;
-            color: #e5e7eb !important;
-            border-radius: 12px;
-        }
+    .stDownloadButton > button {
+        border-radius: 10px;
+        font-weight: 700;
+        background-color: #1e40af;
+        color: white;
+    }
 
-        .stButton > button {
-            border-radius: 10px;
-            font-weight: 700;
-            background-color: #1e40af;
-            color: white;
-            border: 1px solid #3b82f6;
-        }
+    hr {
+        border-color: #334155 !important;
+    }
 
-        .stButton > button:hover {
-            background-color: #2563eb;
-            color: white;
-        }
-
-        .stDownloadButton > button {
-            border-radius: 10px;
-            font-weight: 700;
-            background-color: #1e40af;
-            color: white;
-        }
-
-        hr {
-            border-color: #334155 !important;
-        }
-
-        div[data-testid="stExpander"] {
-            background-color: #111827 !important;
-            border: 1px solid #334155 !important;
-            border-radius: 12px;
-        }
-
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+    </style>
+    """, unsafe_allow_html=True)
 
 
 # =========================================================
@@ -515,72 +474,22 @@ if "autenticado" not in st.session_state:
 
 if not st.session_state.autenticado:
 
-    st.markdown(
-        """
-        <style>
+    st.title("📊 PRODUCT")
 
-        .login-box {
-            max-width: 460px;
-            margin: 70px auto 25px auto;
-            padding: 35px;
-            border-radius: 22px;
-            text-align: center;
-            background: linear-gradient(
-                145deg,
-                #ffffff,
-                #f1f5f9
-            );
-            border: 1px solid #e2e8f0;
-            box-shadow:
-                0 15px 45px rgba(15,23,42,0.16);
-        }
-
-        .login-icon {
-            font-size: 64px;
-            line-height: 1;
-            margin-bottom: 12px;
-        }
-
-        .login-title {
-            font-size: 40px;
-            font-weight: 800;
-            color: #173b8f;
-            margin-bottom: 5px;
-        }
-
-        .login-subtitle {
-            color: #64748b;
-            font-size: 16px;
-            margin-bottom: 5px;
-        }
-
-        </style>
-
-        <div class="login-box">
-
-            <div class="login-icon">
-                📊
-            </div>
-
-            <div class="login-title">
-                PRODUCT
-            </div>
-
-            <div class="login-subtitle">
-                Sistema de Controle de Produtividade
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True
+    st.caption(
+        "Sistema de Controle de Produtividade"
     )
+
+    st.divider()
 
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
 
+        st.subheader("🔐 Acesso ao sistema")
+
         senha = st.text_input(
-            "🔐 Senha de acesso",
+            "Senha de acesso",
             type="password",
             key="senha_login"
         )
@@ -612,9 +521,7 @@ if not st.session_state.autenticado:
 # MENU LATERAL
 # =========================================================
 
-st.sidebar.markdown(
-    "# 📊 PRODUCT"
-)
+st.sidebar.markdown("# 📊 PRODUCT")
 
 st.sidebar.caption(
     "Sistema de Controle de Produtividade"
@@ -651,10 +558,6 @@ if st.sidebar.button(
 st.sidebar.divider()
 
 
-# =========================================================
-# MENU
-# =========================================================
-
 pagina = st.sidebar.radio(
     "MENU",
     [
@@ -687,9 +590,7 @@ if st.sidebar.button(
 
 if pagina == "📈 Dashboard":
 
-    st.title(
-        "📊 Dashboard"
-    )
+    st.title("📊 Dashboard")
 
     st.caption(
         "Visão geral da produtividade da equipe"
@@ -707,13 +608,7 @@ if pagina == "📈 Dashboard":
 
     st.divider()
 
-    # -----------------------------------------------------
-    # FILTROS
-    # -----------------------------------------------------
-
-    st.subheader(
-        "🔎 Filtros"
-    )
+    st.subheader("🔎 Filtros")
 
     col1, col2, col3 = st.columns(3)
 
@@ -755,10 +650,6 @@ if pagina == "📈 Dashboard":
 
             st.rerun()
 
-    # -----------------------------------------------------
-    # FILTRO DATA
-    # -----------------------------------------------------
-
     if (
         isinstance(periodo, tuple)
         and len(periodo) == 2
@@ -776,16 +667,10 @@ if pagina == "📈 Dashboard":
 
         df_filtrado = df.copy()
 
-    # -----------------------------------------------------
-    # FILTRO COLABORADOR
-    # -----------------------------------------------------
-
     if colaborador != "Todos os colaboradores":
 
         df_filtrado = df_filtrado[
-            df_filtrado["colaborador"]
-            ==
-            colaborador
+            df_filtrado["colaborador"] == colaborador
         ].copy()
 
     if df_filtrado.empty:
@@ -795,10 +680,6 @@ if pagina == "📈 Dashboard":
         )
 
         st.stop()
-
-    # -----------------------------------------------------
-    # INDICADORES
-    # -----------------------------------------------------
 
     erro = int(
         df_filtrado["sysvet_erro"].sum()
@@ -812,37 +693,23 @@ if pagina == "📈 Dashboard":
         df_filtrado["faturado"].sum()
     )
 
-    total_sysvet = (
-        erro
-        +
-        exito
-    )
+    total_sysvet = erro + exito
 
     produtividade = (
-        erro
-        +
-        exito
-        +
+        erro +
+        exito +
         faturado
     )
 
     taxa = (
-        exito
-        /
-        total_sysvet
-        *
+        exito /
+        total_sysvet *
         100
         if total_sysvet > 0
         else 0
     )
 
-    # -----------------------------------------------------
-    # CARDS
-    # -----------------------------------------------------
-
-    st.subheader(
-        "📌 Indicadores"
-    )
+    st.subheader("📌 Indicadores")
 
     c1, c2, c3, c4, c5 = st.columns(5)
 
@@ -873,10 +740,6 @@ if pagina == "📈 Dashboard":
 
     st.divider()
 
-    # -----------------------------------------------------
-    # INDICAÇÃO DO FILTRO
-    # -----------------------------------------------------
-
     if colaborador == "Todos os colaboradores":
 
         st.success(
@@ -889,30 +752,14 @@ if pagina == "📈 Dashboard":
             f"👤 Visualizando somente: {colaborador}"
         )
 
-    # -----------------------------------------------------
-    # RESUMO
-    # -----------------------------------------------------
-
     resumo = (
         df_filtrado
         .groupby("colaborador")
         .agg(
-            SYSVET_Erro=(
-                "sysvet_erro",
-                "sum"
-            ),
-            SYSVET_Exito=(
-                "sysvet_exito",
-                "sum"
-            ),
-            Faturado=(
-                "faturado",
-                "sum"
-            ),
-            Total=(
-                "produtividade_total",
-                "sum"
-            )
+            SYSVET_Erro=("sysvet_erro", "sum"),
+            SYSVET_Exito=("sysvet_exito", "sum"),
+            Faturado=("faturado", "sum"),
+            Total=("produtividade_total", "sum")
         )
         .reset_index()
         .sort_values(
@@ -920,10 +767,6 @@ if pagina == "📈 Dashboard":
             ascending=False
         )
     )
-
-    # -----------------------------------------------------
-    # RANKING
-    # -----------------------------------------------------
 
     st.subheader(
         "🏆 Ranking de produtividade"
@@ -956,17 +799,11 @@ if pagina == "📈 Dashboard":
         use_container_width=True
     )
 
-    # -----------------------------------------------------
-    # GRÁFICOS
-    # -----------------------------------------------------
-
     col1, col2 = st.columns(2)
 
     with col1:
 
-        st.subheader(
-            "📊 Composição"
-        )
+        st.subheader("📊 Composição")
 
         composicao = pd.DataFrame({
             "Tipo": [
@@ -1006,9 +843,7 @@ if pagina == "📈 Dashboard":
 
     with col2:
 
-        st.subheader(
-            "📈 Evolução"
-        )
+        st.subheader("📈 Evolução")
 
         diario = (
             df_filtrado
@@ -1048,10 +883,6 @@ if pagina == "📈 Dashboard":
             linha,
             use_container_width=True
         )
-
-    # -----------------------------------------------------
-    # DETALHAMENTO INDIVIDUAL
-    # -----------------------------------------------------
 
     if colaborador != "Todos os colaboradores":
 
@@ -1109,9 +940,7 @@ if pagina == "📈 Dashboard":
 
 elif pagina == "📝 Lançar produtividade":
 
-    st.title(
-        "📝 Lançar produtividade"
-    )
+    st.title("📝 Lançar produtividade")
 
     colaboradores = buscar_colaboradores()
 
@@ -1127,9 +956,7 @@ elif pagina == "📝 Lançar produtividade":
 
     else:
 
-        with st.form(
-            "form_produtividade"
-        ):
+        with st.form("form_produtividade"):
 
             data_lancamento = st.date_input(
                 "📅 Data",
@@ -1171,10 +998,8 @@ elif pagina == "📝 Lançar produtividade":
                 )
 
             total = (
-                erro
-                +
-                exito
-                +
+                erro +
+                exito +
                 faturado
             )
 
@@ -1228,13 +1053,9 @@ elif pagina == "📝 Lançar produtividade":
 
 elif pagina == "👥 Colaboradores":
 
-    st.title(
-        "👥 Colaboradores"
-    )
+    st.title("👥 Colaboradores")
 
-    with st.form(
-        "form_colaborador"
-    ):
+    with st.form("form_colaborador"):
 
         nome = st.text_input(
             "Nome do colaborador"
@@ -1310,9 +1131,7 @@ elif pagina == "👥 Colaboradores":
 
 elif pagina == "📋 Histórico":
 
-    st.title(
-        "📋 Histórico de produtividade"
-    )
+    st.title("📋 Histórico de produtividade")
 
     df = buscar_produtividade()
 
@@ -1329,16 +1148,16 @@ elif pagina == "📋 Histórico":
         # =================================================
 
         st.subheader(
-            "🗑️ Excluir todos os registros de uma data"
+            "🗑️ Excluir registros de uma data"
         )
 
         st.warning(
-            "⚠️ Esta opção excluirá TODOS os lançamentos "
-            "da data escolhida, independentemente do colaborador."
+            "⚠️ Atenção: esta função excluirá TODOS os "
+            "lançamentos da data selecionada."
         )
 
         data_exclusao = st.date_input(
-            "📅 Escolha a data que deseja excluir",
+            "📅 Selecione a data que deseja excluir",
             value=date.today(),
             key="data_exclusao"
         )
@@ -1350,7 +1169,7 @@ elif pagina == "📋 Histórico":
         if registros_data.empty:
 
             st.info(
-                "Nenhum registro encontrado para esta data."
+                "Nenhum registro encontrado nessa data."
             )
 
         else:
@@ -1360,13 +1179,12 @@ elif pagina == "📋 Histórico":
             )
 
             st.error(
-                f"⚠️ Foram encontrados "
-                f"{len(registros_data)} lançamento(s) "
-                f"nesta data, totalizando "
-                f"{total_data} de produtividade."
+                f"Existem {len(registros_data)} lançamento(s) "
+                f"nessa data, totalizando {total_data} "
+                "de produtividade."
             )
 
-            visualizacao_data = registros_data[
+            visualizar = registros_data[
                 [
                     "id",
                     "data",
@@ -1378,12 +1196,12 @@ elif pagina == "📋 Histórico":
                 ]
             ].copy()
 
-            visualizacao_data["data"] = (
-                visualizacao_data["data"]
+            visualizar["data"] = (
+                visualizar["data"]
                 .dt.strftime("%d/%m/%Y")
             )
 
-            visualizacao_data.columns = [
+            visualizar.columns = [
                 "ID",
                 "Data",
                 "Colaborador",
@@ -1394,13 +1212,13 @@ elif pagina == "📋 Histórico":
             ]
 
             st.dataframe(
-                visualizacao_data,
+                visualizar,
                 use_container_width=True,
                 hide_index=True
             )
 
             confirmar_data = st.checkbox(
-                "☑️ Eu confirmo que quero excluir TODOS os registros desta data.",
+                "✅ Confirmo que quero excluir TODOS os registros desta data.",
                 key="confirmar_exclusao_data"
             )
 
@@ -1410,7 +1228,7 @@ elif pagina == "📋 Histórico":
                     "🗑️ EXCLUIR TODOS OS REGISTROS DESTA DATA",
                     type="primary",
                     use_container_width=True,
-                    key="excluir_data"
+                    key="botao_excluir_data"
                 ):
 
                     conn = conectar()
@@ -1432,8 +1250,7 @@ elif pagina == "📋 Histórico":
 
                     st.success(
                         f"✅ {quantidade_excluida} registro(s) "
-                        f"da data {data_exclusao.strftime('%d/%m/%Y')} "
-                        f"foram excluído(s) com sucesso."
+                        "foram excluídos com sucesso."
                     )
 
                     st.rerun()
@@ -1461,24 +1278,24 @@ elif pagina == "📋 Histórico":
         ].iloc[0]
 
         st.info(
-            f"👤 Colaborador: {registro['colaborador']}  |  "
-            f"📅 Data: {registro['data'].strftime('%d/%m/%Y')}  |  "
+            f"👤 {registro['colaborador']} | "
+            f"📅 {registro['data'].strftime('%d/%m/%Y')} | "
             f"📊 Produtividade: "
             f"{int(registro['produtividade_total'])}"
         )
 
         confirmar_individual = st.checkbox(
-            "☑️ Confirmo que quero excluir este lançamento.",
+            "✅ Confirmo a exclusão deste lançamento.",
             key="confirmar_exclusao_individual"
         )
 
         if confirmar_individual:
 
             if st.button(
-                "🗑️ EXCLUIR LANÇAMENTO SELECIONADO",
+                "🗑️ EXCLUIR LANÇAMENTO",
                 type="primary",
                 use_container_width=True,
-                key="excluir_individual"
+                key="botao_excluir_individual"
             ):
 
                 conn = conectar()
@@ -1503,7 +1320,7 @@ elif pagina == "📋 Histórico":
         st.divider()
 
         # =================================================
-        # TODOS OS LANÇAMENTOS
+        # HISTÓRICO COMPLETO
         # =================================================
 
         st.subheader(
@@ -1562,9 +1379,7 @@ elif pagina == "📋 Histórico":
 
 elif pagina == "📥 Exportar":
 
-    st.title(
-        "📥 Exportar dados"
-    )
+    st.title("📥 Exportar dados")
 
     df = buscar_produtividade()
 
@@ -1591,20 +1406,14 @@ elif pagina == "📥 Exportar":
             colaboradores
         )
 
-        if (
-            colaborador_exportar
-            ==
-            "Todos os colaboradores"
-        ):
+        if colaborador_exportar == "Todos os colaboradores":
 
             dados = df.copy()
 
         else:
 
             dados = df[
-                df["colaborador"]
-                ==
-                colaborador_exportar
+                df["colaborador"] == colaborador_exportar
             ].copy()
 
         exportar = dados.copy()
@@ -1683,17 +1492,13 @@ elif pagina == "📥 Exportar":
 
 elif pagina == "🔐 Alterar senha":
 
-    st.title(
-        "🔐 Alterar senha"
-    )
+    st.title("🔐 Alterar senha")
 
     st.info(
         "Altere a senha utilizada para entrar no sistema."
     )
 
-    with st.form(
-        "form_alterar_senha"
-    ):
+    with st.form("form_alterar_senha"):
 
         senha_atual = st.text_input(
             "🔑 Senha atual",
@@ -1743,9 +1548,7 @@ elif pagina == "🔐 Alterar senha":
 
             else:
 
-                alterar_senha(
-                    nova_senha
-                )
+                alterar_senha(nova_senha)
 
                 st.success(
                     "✅ Senha alterada com sucesso!"
