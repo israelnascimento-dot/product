@@ -4,6 +4,8 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import date
+from io import BytesIO
+
 
 # =========================================================
 # CONFIGURAÇÃO
@@ -20,196 +22,301 @@ DB = "produtividade.db"
 
 
 # =========================================================
-# CSS - VISUAL MODERNO / POWER BI
+# CSS
 # =========================================================
 
 st.markdown("""
 <style>
 
-    /* Fundo principal */
-    .stApp {
-        background-color: #f4f7fb;
-    }
+#MainMenu {
+    visibility: hidden;
+}
 
-    /* Remove espaço superior */
-    .block-container {
-        padding-top: 1.2rem;
-        padding-bottom: 2rem;
-    }
+footer {
+    visibility: hidden;
+}
 
-    /* Sidebar */
-    section[data-testid="stSidebar"] {
-        background: linear-gradient(
-            180deg,
-            #111827 0%,
-            #172554 100%
-        );
-    }
+header {
+    visibility: hidden;
+}
 
-    section[data-testid="stSidebar"] * {
-        color: white !important;
-    }
+.stApp {
+    background: #f4f7fb;
+}
 
-    /* Logo */
-    .product-logo {
-        font-size: 28px;
-        font-weight: 800;
-        color: #ffffff;
-        margin-bottom: 0;
-    }
+.block-container {
+    padding-top: 1.5rem;
+    padding-bottom: 2rem;
+}
 
-    .product-subtitle {
-        color: #93c5fd;
-        font-size: 13px;
-        margin-bottom: 25px;
-    }
 
-    /* Cabeçalho */
-    .dashboard-header {
-        background: linear-gradient(
-            135deg,
-            #1d4ed8,
-            #4f46e5
-        );
-        padding: 24px 28px;
-        border-radius: 18px;
-        color: white;
-        margin-bottom: 22px;
-        box-shadow: 0 8px 25px rgba(37, 99, 235, 0.18);
-    }
+/* =====================================================
+   SIDEBAR
+   ===================================================== */
 
-    .dashboard-title {
-        font-size: 30px;
-        font-weight: 800;
-        margin-bottom: 3px;
-    }
+section[data-testid="stSidebar"] {
+    background: linear-gradient(
+        180deg,
+        #0f172a 0%,
+        #172554 55%,
+        #1e3a8a 100%
+    );
+}
 
-    .dashboard-subtitle {
-        font-size: 14px;
-        opacity: 0.88;
-    }
+section[data-testid="stSidebar"] * {
+    color: white !important;
+}
 
-    /* Cards KPI */
-    .kpi-card {
-        background: white;
-        padding: 20px;
-        border-radius: 16px;
-        min-height: 135px;
-        box-shadow: 0 5px 20px rgba(15, 23, 42, 0.07);
-        border: 1px solid #e5e7eb;
-        position: relative;
-        overflow: hidden;
-    }
+.sidebar-logo {
+    text-align: center;
+    padding: 15px 5px 25px 5px;
+}
 
-    .kpi-card:after {
-        content: "";
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: #2563eb;
-    }
+.sidebar-icon {
+    font-size: 42px;
+}
 
-    .kpi-icon {
-        font-size: 25px;
-        margin-bottom: 8px;
-    }
+.sidebar-title {
+    font-size: 30px;
+    font-weight: 900;
+    color: white;
+}
 
-    .kpi-label {
-        color: #64748b;
-        font-size: 13px;
-        font-weight: 600;
-    }
+.sidebar-subtitle {
+    font-size: 12px;
+    color: #bfdbfe;
+}
 
-    .kpi-value {
-        color: #0f172a;
-        font-size: 29px;
-        font-weight: 800;
-        margin-top: 5px;
-    }
 
-    /* Seções */
-    .section-title {
-        font-size: 19px;
-        font-weight: 750;
-        color: #0f172a;
-        margin-top: 20px;
-        margin-bottom: 10px;
-    }
+/* =====================================================
+   LOGIN
+   ===================================================== */
 
-    /* Cards de ranking */
-    .ranking-card {
-        background: white;
-        border-radius: 14px;
-        padding: 14px 18px;
-        margin-bottom: 9px;
-        border: 1px solid #e5e7eb;
-        box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
-    }
+.login-container {
+    max-width: 430px;
+    margin: 90px auto 0 auto;
+    background: white;
+    padding: 42px;
+    border-radius: 24px;
+    box-shadow: 0 20px 60px rgba(15,23,42,0.15);
+    border: 1px solid #e5e7eb;
+}
 
-    .ranking-position {
-        font-size: 21px;
-        font-weight: 800;
-    }
+.login-logo {
+    width: 95px;
+    height: 95px;
+    margin: auto;
+    border-radius: 24px;
+    background: linear-gradient(
+        135deg,
+        #2563eb,
+        #4f46e5
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 48px;
+    box-shadow: 0 10px 25px rgba(37,99,235,0.3);
+}
 
-    .ranking-name {
-        font-weight: 700;
-        color: #1e293b;
-    }
+.login-title {
+    text-align: center;
+    font-size: 34px;
+    font-weight: 900;
+    color: #1d4ed8;
+    margin-top: 18px;
+}
 
-    .ranking-total {
-        font-weight: 800;
-        color: #2563eb;
-    }
+.login-subtitle {
+    text-align: center;
+    color: #64748b;
+    font-size: 14px;
+    margin-bottom: 28px;
+}
 
-    /* Informação */
-    .info-box {
-        background: #eff6ff;
-        border-left: 5px solid #2563eb;
-        padding: 14px 18px;
-        border-radius: 10px;
-        color: #1e3a8a;
-        margin-bottom: 18px;
-    }
+.login-footer {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 12px;
+    margin-top: 20px;
+}
 
-    /* Login */
-    .login-box {
-        max-width: 430px;
-        margin: 80px auto;
-        background: white;
-        padding: 35px;
-        border-radius: 22px;
-        box-shadow: 0 15px 50px rgba(15, 23, 42, 0.12);
-    }
 
-    /* Botões */
-    .stButton > button {
-        border-radius: 10px;
-        font-weight: 650;
-    }
+/* =====================================================
+   DASHBOARD HEADER
+   ===================================================== */
 
-    /* Métricas nativas */
-    div[data-testid="stMetric"] {
-        background: white;
-        padding: 15px;
-        border-radius: 14px;
-        border: 1px solid #e5e7eb;
-        box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);
-    }
+.dashboard-header {
+    background: linear-gradient(
+        135deg,
+        #1d4ed8,
+        #4338ca
+    );
+    padding: 27px 30px;
+    border-radius: 20px;
+    color: white;
+    margin-bottom: 22px;
+    box-shadow: 0 10px 30px rgba(37,99,235,0.18);
+}
 
-    /* Tabelas */
-    div[data-testid="stDataFrame"] {
-        border-radius: 12px;
-        overflow: hidden;
-    }
+.dashboard-title {
+    font-size: 31px;
+    font-weight: 900;
+}
+
+.dashboard-subtitle {
+    font-size: 14px;
+    opacity: .9;
+    margin-top: 5px;
+}
+
+
+/* =====================================================
+   KPI
+   ===================================================== */
+
+.kpi-card {
+    background: white;
+    border-radius: 17px;
+    padding: 20px;
+    min-height: 130px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 5px 20px rgba(15,23,42,.06);
+    position: relative;
+    overflow: hidden;
+}
+
+.kpi-card:after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: #2563eb;
+}
+
+.kpi-icon {
+    font-size: 25px;
+}
+
+.kpi-label {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 700;
+    margin-top: 8px;
+}
+
+.kpi-value {
+    color: #0f172a;
+    font-size: 28px;
+    font-weight: 900;
+    margin-top: 4px;
+}
+
+
+/* =====================================================
+   SEÇÕES
+   ===================================================== */
+
+.section-title {
+    font-size: 20px;
+    font-weight: 850;
+    color: #0f172a;
+    margin-top: 25px;
+    margin-bottom: 12px;
+}
+
+
+/* =====================================================
+   INFO
+   ===================================================== */
+
+.info-box {
+    background: #eff6ff;
+    border-left: 5px solid #2563eb;
+    padding: 14px 18px;
+    border-radius: 10px;
+    color: #1e3a8a;
+    margin-bottom: 18px;
+}
+
+
+/* =====================================================
+   RANKING
+   ===================================================== */
+
+.ranking-card {
+    background: white;
+    border-radius: 14px;
+    padding: 15px 18px;
+    margin-bottom: 9px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 3px 12px rgba(15,23,42,.05);
+}
+
+.ranking-position {
+    font-size: 21px;
+    font-weight: 900;
+}
+
+.ranking-name {
+    font-weight: 750;
+    color: #1e293b;
+}
+
+.ranking-total {
+    float: right;
+    color: #2563eb;
+    font-weight: 900;
+}
+
+
+/* =====================================================
+   BOTÕES
+   ===================================================== */
+
+.stButton > button {
+    border-radius: 10px;
+    font-weight: 700;
+    min-height: 42px;
+}
+
+.stDownloadButton > button {
+    border-radius: 10px;
+    font-weight: 700;
+}
+
+
+/* =====================================================
+   TABELAS
+   ===================================================== */
+
+div[data-testid="stDataFrame"] {
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+
+/* =====================================================
+   INPUTS
+   ===================================================== */
+
+div[data-baseweb="select"] > div {
+    border-radius: 10px;
+}
+
+input {
+    border-radius: 10px !important;
+}
 
 </style>
 """, unsafe_allow_html=True)
 
 
 # =========================================================
-# BANCO
+# BANCO DE DADOS
 # =========================================================
 
 def conectar():
@@ -219,6 +326,7 @@ def conectar():
 def criar_banco():
 
     conn = conectar()
+
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -250,13 +358,14 @@ def criar_banco():
         "SELECT COUNT(*) FROM configuracoes"
     )
 
-    existe = cursor.fetchone()[0]
+    quantidade = cursor.fetchone()[0]
 
-    if existe == 0:
+    if quantidade == 0:
 
         cursor.execute(
             """
-            INSERT INTO configuracoes (id, senha)
+            INSERT INTO configuracoes
+            (id, senha)
             VALUES (1, ?)
             """,
             ("2010",)
@@ -316,80 +425,83 @@ def alterar_senha(nova_senha):
 # LOGIN
 # =========================================================
 
-def tela_login():
+def mostrar_login():
 
-    st.markdown("""
-    <div class="login-box">
+    st.markdown(
+        '<div class="login-container">',
+        unsafe_allow_html=True
+    )
 
-        <div style="
-            text-align:center;
-            font-size:48px;
-        ">
-            📊
-        </div>
+    st.markdown(
+        '<div class="login-logo">📊</div>',
+        unsafe_allow_html=True
+    )
 
-        <div style="
-            text-align:center;
-            font-size:32px;
-            font-weight:800;
-            color:#1d4ed8;
-        ">
-            PRODUCT
-        </div>
+    st.markdown(
+        '<div class="login-title">PRODUCT</div>',
+        unsafe_allow_html=True
+    )
 
-        <div style="
-            text-align:center;
-            color:#64748b;
-            margin-bottom:25px;
-        ">
-            Sistema de Controle de Produtividade
-        </div>
+    st.markdown(
+        '<div class="login-subtitle">'
+        'Sistema de Controle de Produtividade'
+        '</div>',
+        unsafe_allow_html=True
+    )
 
-    </div>
-    """, unsafe_allow_html=True)
+    senha = st.text_input(
+        "🔐 Senha de acesso",
+        type="password",
+        label_visibility="visible"
+    )
 
-    col1, col2, col3 = st.columns([1, 2, 1])
+    entrar = st.button(
+        "🔓 ENTRAR",
+        use_container_width=True,
+        type="primary"
+    )
 
-    with col2:
+    if entrar:
 
-        senha = st.text_input(
-            "🔐 Senha de acesso",
-            type="password"
-        )
+        if senha == buscar_senha():
 
-        entrar = st.button(
-            "🔓 ENTRAR NO PRODUCT",
-            use_container_width=True,
-            type="primary"
-        )
+            st.session_state["autenticado"] = True
 
-        if entrar:
+            st.rerun()
 
-            if senha == buscar_senha():
+        else:
 
-                st.session_state["autenticado"] = True
+            st.error(
+                "Senha incorreta."
+            )
 
-                st.rerun()
+    st.markdown(
+        '<div class="login-footer">'
+        'PRODUCT • Controle de Produtividade'
+        '</div>',
+        unsafe_allow_html=True
+    )
 
-            else:
-
-                st.error(
-                    "❌ Senha incorreta."
-                )
+    st.markdown(
+        '</div>',
+        unsafe_allow_html=True
+    )
 
 
 if "autenticado" not in st.session_state:
+
     st.session_state["autenticado"] = False
 
 
 if not st.session_state["autenticado"]:
 
-    tela_login()
+    mostrar_login()
+
     st.stop()
 
 
 # =========================================================
-# FUNÇÕES DE DADOS
+# FUNÇÕES
 # =========================================================
 
 def buscar_colaboradores():
@@ -443,12 +555,15 @@ def buscar_produtividade():
         )
 
         df["taxa_exito"] = df.apply(
-            lambda x:
+            lambda linha:
             (
-                x["sysvet_exito"] /
-                x["total_sysvet"] * 100
+                linha["sysvet_exito"]
+                /
+                linha["total_sysvet"]
+                *
+                100
             )
-            if x["total_sysvet"] > 0
+            if linha["total_sysvet"] > 0
             else 0,
             axis=1
         )
@@ -461,14 +576,23 @@ def buscar_produtividade():
 # =========================================================
 
 st.sidebar.markdown(
-    '<div class="product-logo">📊 PRODUCT</div>',
-    unsafe_allow_html=True
-)
+    """
+    <div class="sidebar-logo">
 
-st.sidebar.markdown(
-    '<div class="product-subtitle">'
-    'Controle de Produtividade'
-    '</div>',
+        <div class="sidebar-icon">
+            📊
+        </div>
+
+        <div class="sidebar-title">
+            PRODUCT
+        </div>
+
+        <div class="sidebar-subtitle">
+            Controle de Produtividade
+        </div>
+
+    </div>
+    """,
     unsafe_allow_html=True
 )
 
@@ -488,16 +612,13 @@ pagina = st.sidebar.radio(
 
 st.sidebar.divider()
 
-st.sidebar.caption(
-    "Sistema PRODUCT"
-)
-
 if st.sidebar.button(
     "🚪 SAIR",
     use_container_width=True
 ):
 
     st.session_state["autenticado"] = False
+
     st.rerun()
 
 
@@ -509,59 +630,66 @@ if pagina == "📈 Dashboard":
 
     df = buscar_produtividade()
 
-    st.markdown("""
-    <div class="dashboard-header">
+    st.markdown(
+        """
+        <div class="dashboard-header">
 
-        <div class="dashboard-title">
-            📊 Dashboard de Produtividade
+            <div class="dashboard-title">
+                📊 Dashboard de Produtividade
+            </div>
+
+            <div class="dashboard-subtitle">
+                Indicadores de desempenho da equipe
+            </div>
+
         </div>
-
-        <div class="dashboard-subtitle">
-            Acompanhamento de desempenho individual e da equipe
-        </div>
-
-    </div>
-    """, unsafe_allow_html=True)
+        """,
+        unsafe_allow_html=True
+    )
 
     if df.empty:
 
         st.info(
-            "Ainda não existem registros de produtividade."
+            "Nenhum lançamento encontrado."
         )
 
         st.stop()
 
-    # =====================================================
+    # -----------------------------------------------------
     # FILTROS
-    # =====================================================
+    # -----------------------------------------------------
 
     st.markdown(
-        '<div class="section-title">🔎 Filtros do Dashboard</div>',
+        '<div class="section-title">'
+        '🔎 Filtros'
+        '</div>',
         unsafe_allow_html=True
     )
 
-    filtro1, filtro2, filtro3 = st.columns(
+    f1, f2, f3 = st.columns(
         [2, 2, 1]
     )
 
-    colaboradores = sorted(
+    lista_colaboradores = sorted(
         df["colaborador"]
         .dropna()
         .unique()
         .tolist()
     )
 
-    with filtro1:
+    with f1:
 
-        colaborador_selecionado = st.selectbox(
+        colaborador = st.selectbox(
             "👤 Colaborador",
-            ["👥 Todos"] + colaboradores
+            ["👥 Todos os colaboradores"]
+            + lista_colaboradores
         )
 
     data_min = df["data"].min().date()
+
     data_max = df["data"].max().date()
 
-    with filtro2:
+    with f2:
 
         periodo = st.date_input(
             "📅 Período",
@@ -570,22 +698,22 @@ if pagina == "📈 Dashboard":
             max_value=data_max
         )
 
-    with filtro3:
+    with f3:
 
         st.write("")
+
         st.write("")
 
-        limpar = st.button(
+        if st.button(
             "🔄 Atualizar",
             use_container_width=True
-        )
+        ):
 
-        if limpar:
             st.rerun()
 
-    # =====================================================
+    # -----------------------------------------------------
     # FILTRO DATA
-    # =====================================================
+    # -----------------------------------------------------
 
     if (
         isinstance(periodo, tuple)
@@ -595,69 +723,43 @@ if pagina == "📈 Dashboard":
         inicio, fim = periodo
 
         df_filtrado = df[
-            (df["data"].dt.date >= inicio)
+            (
+                df["data"].dt.date
+                >= inicio
+            )
             &
-            (df["data"].dt.date <= fim)
+            (
+                df["data"].dt.date
+                <= fim
+            )
         ].copy()
 
     else:
 
         df_filtrado = df.copy()
 
-    # =====================================================
+    # -----------------------------------------------------
     # FILTRO COLABORADOR
-    # =====================================================
+    # -----------------------------------------------------
 
-    if colaborador_selecionado != "👥 Todos":
+    if colaborador != "👥 Todos os colaboradores":
 
         df_filtrado = df_filtrado[
             df_filtrado["colaborador"]
-            == colaborador_selecionado
+            == colaborador
         ].copy()
-
-    # =====================================================
-    # RESULTADO
-    # =====================================================
 
     if df_filtrado.empty:
 
         st.warning(
-            "⚠️ Não existem registros para os filtros selecionados."
+            "Nenhum registro encontrado para os filtros selecionados."
         )
 
         st.stop()
 
-    # =====================================================
-    # TÍTULO DA VISÃO
-    # =====================================================
-
-    if colaborador_selecionado == "👥 Todos":
-
-        st.markdown(
-            """
-            <div class="info-box">
-                👥 <b>Visão geral da equipe</b><br>
-                Os indicadores abaixo representam todos os colaboradores selecionados.
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-    else:
-
-        st.markdown(
-            f"""
-            <div class="info-box">
-                👤 <b>Visualizando:</b> {colaborador_selecionado}<br>
-                Os indicadores abaixo representam somente este colaborador.
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-    # =====================================================
-    # KPIs
-    # =====================================================
+    # -----------------------------------------------------
+    # INDICADORES
+    # -----------------------------------------------------
 
     erro = int(
         df_filtrado["sysvet_erro"].sum()
@@ -673,11 +775,7 @@ if pagina == "📈 Dashboard":
 
     total_sysvet = erro + exito
 
-    produtividade = (
-        erro +
-        exito +
-        faturado
-    )
+    total = erro + exito + faturado
 
     taxa = (
         exito / total_sysvet * 100
@@ -685,78 +783,78 @@ if pagina == "📈 Dashboard":
         else 0
     )
 
+    # -----------------------------------------------------
+    # CARDS
+    # -----------------------------------------------------
+
     k1, k2, k3, k4, k5 = st.columns(5)
 
-    with k1:
+    cards = [
+        ("❌", "SYSVET ERRO", erro),
+        ("✅", "SYSVET ÊXITO", exito),
+        ("📁", "FATURADO", faturado),
+        ("📊", "PRODUTIVIDADE", total),
+        ("🎯", "TAXA DE ÊXITO", f"{taxa:.1f}%")
+    ]
 
-        st.markdown(
-            f"""
-            <div class="kpi-card">
-                <div class="kpi-icon">❌</div>
-                <div class="kpi-label">SYSVET ERRO</div>
-                <div class="kpi-value">{erro:,}</div>
-            </div>
-            """,
-            unsafe_allow_html=True
+    colunas = [k1, k2, k3, k4, k5]
+
+    for coluna, card in zip(colunas, cards):
+
+        icone, titulo, valor = card
+
+        with coluna:
+
+            st.markdown(
+                f"""
+                <div class="kpi-card">
+
+                    <div class="kpi-icon">
+                        {icone}
+                    </div>
+
+                    <div class="kpi-label">
+                        {titulo}
+                    </div>
+
+                    <div class="kpi-value">
+                        {valor:,}
+                    </div>
+
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+    # -----------------------------------------------------
+    # IDENTIFICAÇÃO DA VISÃO
+    # -----------------------------------------------------
+
+    if colaborador == "👥 Todos os colaboradores":
+
+        texto_visao = (
+            "👥 Visualizando a produtividade de toda a equipe."
         )
 
-    with k2:
+    else:
 
-        st.markdown(
-            f"""
-            <div class="kpi-card">
-                <div class="kpi-icon">✅</div>
-                <div class="kpi-label">SYSVET ÊXITO</div>
-                <div class="kpi-value">{exito:,}</div>
-            </div>
-            """,
-            unsafe_allow_html=True
+        texto_visao = (
+            f"👤 Visualizando exclusivamente a produtividade de "
+            f"<b>{colaborador}</b>."
         )
 
-    with k3:
+    st.markdown(
+        f"""
+        <div class="info-box">
+            {texto_visao}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-        st.markdown(
-            f"""
-            <div class="kpi-card">
-                <div class="kpi-icon">📁</div>
-                <div class="kpi-label">FATURADO</div>
-                <div class="kpi-value">{faturado:,}</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-    with k4:
-
-        st.markdown(
-            f"""
-            <div class="kpi-card">
-                <div class="kpi-icon">📊</div>
-                <div class="kpi-label">PRODUTIVIDADE TOTAL</div>
-                <div class="kpi-value">{produtividade:,}</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-    with k5:
-
-        st.markdown(
-            f"""
-            <div class="kpi-card">
-                <div class="kpi-icon">🎯</div>
-                <div class="kpi-label">TAXA DE ÊXITO</div>
-                <div class="kpi-value">{taxa:.1f}%</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-    st.write("")
-
-    # =====================================================
-    # RESUMO POR COLABORADOR
-    # =====================================================
+    # -----------------------------------------------------
+    # RESUMO
+    # -----------------------------------------------------
 
     resumo = (
         df_filtrado
@@ -774,22 +872,24 @@ if pagina == "📈 Dashboard":
         )
     )
 
-    # =====================================================
-    # RANKING VISUAL + COMPOSIÇÃO
-    # =====================================================
+    # -----------------------------------------------------
+    # RANKING + GRÁFICO
+    # -----------------------------------------------------
 
-    col_rank, col_comp = st.columns(
-        [1, 1.5]
+    esquerda, direita = st.columns(
+        [1, 1.6]
     )
 
-    with col_rank:
+    with esquerda:
 
         st.markdown(
-            '<div class="section-title">🏆 Ranking</div>',
+            '<div class="section-title">'
+            '🏆 Ranking'
+            '</div>',
             unsafe_allow_html=True
         )
 
-        for pos, (_, row) in enumerate(
+        for pos, (_, linha) in enumerate(
             resumo.iterrows(),
             start=1
         ):
@@ -817,12 +917,11 @@ if pagina == "📈 Dashboard":
                     &nbsp;&nbsp;
 
                     <span class="ranking-name">
-                        {row['colaborador']}
+                        {linha['colaborador']}
                     </span>
 
-                    <span style="float:right"
-                          class="ranking-total">
-                        {int(row['Total']):,}
+                    <span class="ranking-total">
+                        {int(linha['Total']):,}
                     </span>
 
                 </div>
@@ -830,64 +929,114 @@ if pagina == "📈 Dashboard":
                 unsafe_allow_html=True
             )
 
-    with col_comp:
+    with direita:
 
         st.markdown(
-            '<div class="section-title">📊 Composição da produtividade</div>',
+            '<div class="section-title">'
+            '📊 Produtividade por colaborador'
+            '</div>',
             unsafe_allow_html=True
         )
 
-        composicao = pd.DataFrame({
-            "Tipo": [
-                "SYSVET Erro",
-                "SYSVET Êxito",
-                "Faturado"
-            ],
-            "Quantidade": [
-                erro,
-                exito,
-                faturado
+        grafico = px.bar(
+            resumo,
+            x="colaborador",
+            y="Total",
+            color="Total",
+            text="Total",
+            color_continuous_scale=[
+                "#bfdbfe",
+                "#2563eb",
+                "#1e3a8a"
             ]
-        })
-
-        fig = px.pie(
-            composicao,
-            names="Tipo",
-            values="Quantidade",
-            hole=0.58,
-            color="Tipo",
-            color_discrete_map={
-                "SYSVET Erro": "#ef4444",
-                "SYSVET Êxito": "#22c55e",
-                "Faturado": "#3b82f6"
-            }
         )
 
-        fig.update_layout(
-            height=350,
+        grafico.update_traces(
+            textposition="outside"
+        )
+
+        grafico.update_layout(
+            height=360,
+            plot_bgcolor="white",
+            paper_bgcolor="white",
             margin=dict(
-                l=10,
-                r=10,
-                t=10,
-                b=10
+                l=20,
+                r=20,
+                t=20,
+                b=20
             ),
-            legend=dict(
-                orientation="h",
-                y=-0.08
-            )
+            xaxis_title="",
+            yaxis_title="Produtividade",
+            coloraxis_showscale=False
         )
 
         st.plotly_chart(
-            fig,
+            grafico,
             use_container_width=True
         )
 
-    # =====================================================
-    # EVOLUÇÃO DIÁRIA
-    # =====================================================
+    # -----------------------------------------------------
+    # COMPOSIÇÃO
+    # -----------------------------------------------------
 
     st.markdown(
-        '<div class="section-title">📈 Evolução da produtividade</div>',
+        '<div class="section-title">'
+        '📊 Composição da produtividade'
+        '</div>',
+        unsafe_allow_html=True
+    )
+
+    composicao = pd.DataFrame({
+        "Tipo": [
+            "SYSVET Erro",
+            "SYSVET Êxito",
+            "Faturado"
+        ],
+        "Quantidade": [
+            erro,
+            exito,
+            faturado
+        ]
+    })
+
+    grafico_pizza = px.pie(
+        composicao,
+        names="Tipo",
+        values="Quantidade",
+        hole=0.58,
+        color="Tipo",
+        color_discrete_map={
+            "SYSVET Erro": "#ef4444",
+            "SYSVET Êxito": "#22c55e",
+            "Faturado": "#2563eb"
+        }
+    )
+
+    grafico_pizza.update_layout(
+        height=380,
+        paper_bgcolor="white",
+        plot_bgcolor="white",
+        margin=dict(
+            l=20,
+            r=20,
+            t=20,
+            b=20
+        )
+    )
+
+    st.plotly_chart(
+        grafico_pizza,
+        use_container_width=True
+    )
+
+    # -----------------------------------------------------
+    # EVOLUÇÃO
+    # -----------------------------------------------------
+
+    st.markdown(
+        '<div class="section-title">'
+        '📈 Evolução da produtividade'
+        '</div>',
         unsafe_allow_html=True
     )
 
@@ -903,14 +1052,14 @@ if pagina == "📈 Dashboard":
         .reset_index()
     )
 
-    fig = go.Figure()
+    grafico_linha = go.Figure()
 
-    fig.add_trace(
+    grafico_linha.add_trace(
         go.Scatter(
             x=diario["data"],
             y=diario["Total"],
-            mode="lines+markers",
             name="Produtividade",
+            mode="lines+markers",
             line=dict(
                 color="#2563eb",
                 width=4
@@ -921,12 +1070,12 @@ if pagina == "📈 Dashboard":
         )
     )
 
-    fig.add_trace(
+    grafico_linha.add_trace(
         go.Scatter(
             x=diario["data"],
             y=diario["Faturado"],
-            mode="lines+markers",
             name="Faturado",
+            mode="lines+markers",
             line=dict(
                 color="#22c55e",
                 width=3
@@ -934,7 +1083,7 @@ if pagina == "📈 Dashboard":
         )
     )
 
-    fig.update_layout(
+    grafico_linha.update_layout(
         height=420,
         hovermode="x unified",
         plot_bgcolor="white",
@@ -945,35 +1094,24 @@ if pagina == "📈 Dashboard":
             t=20,
             b=20
         ),
-        xaxis=dict(
-            title="Data",
-            showgrid=False
-        ),
-        yaxis=dict(
-            title="Quantidade",
-            gridcolor="#e5e7eb"
-        ),
-        legend=dict(
-            orientation="h",
-            y=1.08,
-            x=0
-        )
+        xaxis_title="Data",
+        yaxis_title="Quantidade"
     )
 
     st.plotly_chart(
-        fig,
+        grafico_linha,
         use_container_width=True
     )
 
-    # =====================================================
-    # DETALHAMENTO INDIVIDUAL
-    # =====================================================
+    # -----------------------------------------------------
+    # TABELA DO COLABORADOR
+    # -----------------------------------------------------
 
-    if colaborador_selecionado != "👥 Todos":
+    if colaborador != "👥 Todos os colaboradores":
 
         st.markdown(
             '<div class="section-title">'
-            '👤 Detalhamento do colaborador'
+            '👤 Detalhamento individual'
             '</div>',
             unsafe_allow_html=True
         )
@@ -1032,25 +1170,13 @@ elif pagina == "📝 Lançar produtividade":
     if colaboradores.empty:
 
         st.warning(
-            "⚠️ Cadastre primeiro os colaboradores."
-        )
-
-        st.info(
-            "Acesse o menu 👥 Colaboradores."
+            "Cadastre primeiro os colaboradores."
         )
 
     else:
 
-        st.markdown(
-            '<div class="info-box">'
-            'Preencha os dados abaixo para registrar '
-            'a produtividade do colaborador.'
-            '</div>',
-            unsafe_allow_html=True
-        )
-
         with st.form(
-            "form_produtividade"
+            "form_lancamento"
         ):
 
             data_lancamento = st.date_input(
@@ -1063,9 +1189,9 @@ elif pagina == "📝 Lançar produtividade":
                 colaboradores["nome"].tolist()
             )
 
-            col1, col2, col3 = st.columns(3)
+            c1, c2, c3 = st.columns(3)
 
-            with col1:
+            with c1:
 
                 erro = st.number_input(
                     "❌ SYSVET com erro",
@@ -1074,7 +1200,7 @@ elif pagina == "📝 Lançar produtividade":
                     step=1
                 )
 
-            with col2:
+            with c2:
 
                 exito = st.number_input(
                     "✅ SYSVET com êxito",
@@ -1083,7 +1209,7 @@ elif pagina == "📝 Lançar produtividade":
                     step=1
                 )
 
-            with col3:
+            with c3:
 
                 faturado = st.number_input(
                     "📁 Faturado",
@@ -1092,11 +1218,7 @@ elif pagina == "📝 Lançar produtividade":
                     step=1
                 )
 
-            total = (
-                erro +
-                exito +
-                faturado
-            )
+            total = erro + exito + faturado
 
             st.info(
                 f"📊 Produtividade total: **{total}**"
@@ -1136,7 +1258,7 @@ elif pagina == "📝 Lançar produtividade":
                 conn.close()
 
                 st.success(
-                    "✅ Produtividade registrada com sucesso!"
+                    "Produtividade registrada com sucesso!"
                 )
 
                 st.rerun()
@@ -1179,7 +1301,8 @@ elif pagina == "👥 Colaboradores":
 
                     conn.execute(
                         """
-                        INSERT INTO colaboradores (nome)
+                        INSERT INTO colaboradores
+                        (nome)
                         VALUES (?)
                         """,
                         (nome.strip(),)
@@ -1189,7 +1312,7 @@ elif pagina == "👥 Colaboradores":
                     conn.close()
 
                     st.success(
-                        f"✅ {nome.strip()} cadastrado!"
+                        "Colaborador cadastrado!"
                     )
 
                     st.rerun()
@@ -1197,20 +1320,14 @@ elif pagina == "👥 Colaboradores":
                 except sqlite3.IntegrityError:
 
                     st.error(
-                        "⚠️ Esse colaborador já está cadastrado."
+                        "Esse colaborador já está cadastrado."
                     )
 
     st.divider()
 
     colaboradores = buscar_colaboradores()
 
-    if colaboradores.empty:
-
-        st.info(
-            "Nenhum colaborador cadastrado."
-        )
-
-    else:
+    if not colaboradores.empty:
 
         st.dataframe(
             colaboradores[
@@ -1227,7 +1344,7 @@ elif pagina == "👥 Colaboradores":
 
 elif pagina == "📋 Histórico":
 
-    st.title("📋 Histórico de produtividade")
+    st.title("📋 Histórico")
 
     df = buscar_produtividade()
 
@@ -1239,10 +1356,6 @@ elif pagina == "📋 Histórico":
 
     else:
 
-        # =================================================
-        # EXCLUIR POR DATA
-        # =================================================
-
         st.markdown(
             '<div class="section-title">'
             '🗑️ Excluir registros por data'
@@ -1253,16 +1366,15 @@ elif pagina == "📋 Histórico":
         data_exclusao = st.date_input(
             "📅 Selecione a data",
             value=date.today(),
-            key="data_exclusao"
+            key="excluir_data"
         )
 
-        registros_data = df[
-            df["data"].dt.date == data_exclusao
+        registros = df[
+            df["data"].dt.date
+            == data_exclusao
         ]
 
-        quantidade = len(
-            registros_data
-        )
+        quantidade = len(registros)
 
         st.metric(
             "Registros encontrados",
@@ -1271,15 +1383,14 @@ elif pagina == "📋 Histórico":
 
         if quantidade > 0:
 
-            confirmar_data = st.checkbox(
-                "⚠️ Confirmo que desejo excluir "
-                "TODOS os registros desta data."
+            confirmar = st.checkbox(
+                "Confirmo que desejo excluir todos os registros desta data."
             )
 
-            if confirmar_data:
+            if confirmar:
 
                 if st.button(
-                    "🗑️ EXCLUIR TODOS OS REGISTROS DA DATA",
+                    "🗑️ EXCLUIR TODOS DA DATA",
                     type="primary",
                     use_container_width=True
                 ):
@@ -1302,7 +1413,7 @@ elif pagina == "📋 Histórico":
                     conn.close()
 
                     st.success(
-                        f"✅ {excluidos} registro(s) excluído(s)."
+                        f"{excluidos} registro(s) excluído(s)."
                     )
 
                     st.rerun()
@@ -1315,19 +1426,16 @@ elif pagina == "📋 Histórico":
 
         st.divider()
 
-        # =================================================
-        # EXCLUIR INDIVIDUAL
-        # =================================================
-
-        st.subheader(
-            "🗑️ Excluir lançamento individual"
+        st.markdown(
+            '<div class="section-title">'
+            '🗑️ Excluir lançamento individual'
+            '</div>',
+            unsafe_allow_html=True
         )
 
-        ids = df["id"].tolist()
-
         id_selecionado = st.selectbox(
-            "Selecione o ID",
-            ids
+            "Selecione o ID do lançamento",
+            df["id"].tolist()
         )
 
         registro = df[
@@ -1335,16 +1443,16 @@ elif pagina == "📋 Histórico":
         ].iloc[0]
 
         st.info(
-            f"👤 {registro['colaborador']} | "
-            f"📅 {registro['data'].strftime('%d/%m/%Y')} | "
-            f"📊 Total: {registro['produtividade_total']}"
+            f"👤 {registro['colaborador']}   |   "
+            f"📅 {registro['data'].strftime('%d/%m/%Y')}   |   "
+            f"📊 Total: {int(registro['produtividade_total'])}"
         )
 
-        confirmar = st.checkbox(
-            "Confirmo que desejo excluir este lançamento."
+        confirmar_individual = st.checkbox(
+            "Confirmo a exclusão deste lançamento."
         )
 
-        if confirmar:
+        if confirmar_individual:
 
             if st.button(
                 "🗑️ EXCLUIR LANÇAMENTO",
@@ -1366,19 +1474,18 @@ elif pagina == "📋 Histórico":
                 conn.close()
 
                 st.success(
-                    "✅ Lançamento excluído!"
+                    "Lançamento excluído."
                 )
 
                 st.rerun()
 
         st.divider()
 
-        # =================================================
-        # HISTÓRICO COMPLETO
-        # =================================================
-
-        st.subheader(
-            "📋 Histórico completo"
+        st.markdown(
+            '<div class="section-title">'
+            '📋 Todos os lançamentos'
+            '</div>',
+            unsafe_allow_html=True
         )
 
         historico = df[
@@ -1432,7 +1539,7 @@ elif pagina == "📋 Histórico":
 
 elif pagina == "📥 Exportar":
 
-    st.title("📥 Exportar dados")
+    st.title("📥 Exportar")
 
     df = buscar_produtividade()
 
@@ -1444,11 +1551,6 @@ elif pagina == "📥 Exportar":
 
     else:
 
-        st.subheader(
-            "📊 Exportação para Excel"
-        )
-
-        # Filtro de colaborador
         colaboradores = sorted(
             df["colaborador"]
             .unique()
@@ -1462,20 +1564,39 @@ elif pagina == "📥 Exportar":
 
         if colaborador_exportar != "Todos":
 
-            dados_exportar = df[
+            dados = df[
                 df["colaborador"]
                 == colaborador_exportar
             ].copy()
 
         else:
 
-            dados_exportar = df.copy()
+            dados = df.copy()
 
-        exportar = dados_exportar.copy()
+        exportar = dados.copy()
 
         exportar["data"] = (
             exportar["data"]
             .dt.strftime("%d/%m/%Y")
+        )
+
+        exportar = exportar[
+            [
+                "id",
+                "data",
+                "colaborador",
+                "sysvet_erro",
+                "sysvet_exito",
+                "faturado",
+                "total_sysvet",
+                "produtividade_total",
+                "taxa_exito"
+            ]
+        ]
+
+        exportar["taxa_exito"] = (
+            exportar["taxa_exito"]
+            .round(1)
         )
 
         exportar.columns = [
@@ -1490,35 +1611,36 @@ elif pagina == "📥 Exportar":
             "Taxa de Êxito"
         ]
 
-        arquivo = (
-            "PRODUCT_produtividade.xlsx"
-        )
+        # Criar Excel na memória
+        arquivo_excel = BytesIO()
 
-        exportar.to_excel(
-            arquivo,
-            index=False
-        )
+        with pd.ExcelWriter(
+            arquivo_excel,
+            engine="openpyxl"
+        ) as writer:
+
+            exportar.to_excel(
+                writer,
+                index=False,
+                sheet_name="Produtividade"
+            )
+
+        arquivo_excel.seek(0)
 
         st.success(
-            f"✅ {len(exportar)} registro(s) "
-            "pronto(s) para exportação."
+            f"{len(exportar)} registro(s) preparado(s) para exportação."
         )
 
-        with open(
-            arquivo,
-            "rb"
-        ) as f:
-
-            st.download_button(
-                label="📥 BAIXAR EXCEL",
-                data=f,
-                file_name=arquivo,
-                mime=(
-                    "application/vnd.openxmlformats-"
-                    "officedocument.spreadsheetml.sheet"
-                ),
-                use_container_width=True
-            )
+        st.download_button(
+            "📥 BAIXAR EXCEL",
+            data=arquivo_excel,
+            file_name="PRODUCT_produtividade.xlsx",
+            mime=(
+                "application/vnd.openxmlformats-"
+                "officedocument.spreadsheetml.sheet"
+            ),
+            use_container_width=True
+        )
 
 
 # =========================================================
@@ -1532,15 +1654,15 @@ elif pagina == "🔐 Alterar senha":
     st.markdown(
         """
         <div class="info-box">
-            🔐 Utilize esta área para alterar a senha
-            de acesso ao sistema PRODUCT.
+            🔐 Aqui você pode alterar a senha utilizada
+            para acessar o sistema.
         </div>
         """,
         unsafe_allow_html=True
     )
 
     with st.form(
-        "form_alterar_senha"
+        "form_senha"
     ):
 
         senha_atual = st.text_input(
@@ -1568,26 +1690,25 @@ elif pagina == "🔐 Alterar senha":
             if senha_atual != buscar_senha():
 
                 st.error(
-                    "❌ A senha atual está incorreta."
+                    "A senha atual está incorreta."
                 )
 
             elif not nova_senha:
 
                 st.error(
-                    "❌ Digite uma nova senha."
+                    "Digite uma nova senha."
                 )
 
             elif nova_senha != confirmar_senha:
 
                 st.error(
-                    "❌ As senhas não são iguais."
+                    "As senhas não são iguais."
                 )
 
             elif len(nova_senha) < 4:
 
                 st.error(
-                    "❌ A senha deve possuir pelo menos "
-                    "4 caracteres."
+                    "A senha deve possuir pelo menos 4 caracteres."
                 )
 
             else:
@@ -1597,11 +1718,7 @@ elif pagina == "🔐 Alterar senha":
                 )
 
                 st.success(
-                    "✅ Senha alterada com sucesso!"
-                )
-
-                st.info(
-                    "A nova senha será utilizada no próximo acesso."
+                    "Senha alterada com sucesso!"
                 )
 
 
