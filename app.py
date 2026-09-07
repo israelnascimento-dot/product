@@ -89,7 +89,6 @@ criar_banco()
 def buscar_senha():
 
     conn = conectar()
-
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -160,9 +159,7 @@ def buscar_produtividade():
 
     if not df.empty:
 
-        df["data"] = pd.to_datetime(
-            df["data"]
-        )
+        df["data"] = pd.to_datetime(df["data"])
 
         df["total_sysvet"] = (
             df["sysvet_erro"]
@@ -196,58 +193,6 @@ def buscar_produtividade():
 
 
 # =========================================================
-# NOVA FUNÇÃO - EXCLUIR REGISTROS POR DATA
-# =========================================================
-
-def excluir_por_data(data_exclusao):
-
-    conn = conectar()
-
-    cursor = conn.cursor()
-
-    cursor.execute(
-        """
-        DELETE FROM produtividade
-        WHERE data = ?
-        """,
-        (str(data_exclusao),)
-    )
-
-    quantidade_excluida = cursor.rowcount
-
-    conn.commit()
-    conn.close()
-
-    return quantidade_excluida
-
-
-# =========================================================
-# FUNÇÃO - EXCLUIR REGISTRO INDIVIDUAL
-# =========================================================
-
-def excluir_registro(id_registro):
-
-    conn = conectar()
-
-    cursor = conn.cursor()
-
-    cursor.execute(
-        """
-        DELETE FROM produtividade
-        WHERE id = ?
-        """,
-        (int(id_registro),)
-    )
-
-    quantidade_excluida = cursor.rowcount
-
-    conn.commit()
-    conn.close()
-
-    return quantidade_excluida
-
-
-# =========================================================
 # MODO VISUAL
 # =========================================================
 
@@ -256,306 +201,308 @@ if "modo_noturno" not in st.session_state:
 
 
 # =========================================================
-# CSS - MODO CLARO
+# CSS
 # =========================================================
 
 if not st.session_state.modo_noturno:
 
-    st.markdown("""
-    <style>
+    st.markdown(
+        """
+        <style>
 
-    .stApp {
-        background-color: #f4f7fb;
-        color: #172033;
-    }
+        .stApp {
+            background-color: #f4f7fb;
+            color: #172033;
+        }
 
-    [data-testid="stSidebar"] {
-        background: linear-gradient(
-            180deg,
-            #0f172a 0%,
-            #173b8f 100%
-        );
-    }
+        [data-testid="stSidebar"] {
+            background: linear-gradient(
+                180deg,
+                #0f172a 0%,
+                #173b8f 100%
+            );
+        }
 
-    [data-testid="stSidebar"] * {
-        color: white !important;
-    }
+        [data-testid="stSidebar"] * {
+            color: white !important;
+        }
 
-    h1 {
-        color: #173b8f !important;
-        font-weight: 800;
-    }
+        h1 {
+            color: #173b8f !important;
+            font-weight: 800;
+        }
 
-    h2, h3 {
-        color: #1e3a8a !important;
-    }
+        h2,
+        h3 {
+            color: #1e3a8a !important;
+        }
 
-    p, label, span {
-        color: #263247;
-    }
+        p,
+        label,
+        span {
+            color: #263247;
+        }
 
-    div[data-testid="stMetric"] {
-        background: white;
-        padding: 18px;
-        border-radius: 15px;
-        border: 1px solid #e1e7ef;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-    }
+        div[data-testid="stMetric"] {
+            background: white;
+            padding: 18px;
+            border-radius: 15px;
+            border: 1px solid #e1e7ef;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        }
 
-    div[data-testid="stMetricLabel"] {
-        color: #64748b !important;
-    }
+        div[data-testid="stMetricLabel"] {
+            color: #64748b !important;
+        }
 
-    div[data-testid="stMetricValue"] {
-        color: #173b8f !important;
-        font-weight: 800;
-    }
+        div[data-testid="stMetricValue"] {
+            color: #173b8f !important;
+            font-weight: 800;
+        }
 
-    div[data-baseweb="input"] {
-        background-color: white !important;
-        border-radius: 10px;
-    }
+        div[data-baseweb="input"] {
+            background-color: white !important;
+            border-radius: 10px;
+        }
 
-    div[data-baseweb="input"] input {
-        color: #172033 !important;
-        background-color: white !important;
-    }
+        div[data-baseweb="input"] input {
+            color: #172033 !important;
+            background-color: white !important;
+        }
 
-    div[data-baseweb="select"] > div {
-        background-color: white !important;
-        color: #172033 !important;
-    }
+        div[data-baseweb="select"] > div {
+            background-color: white !important;
+            color: #172033 !important;
+        }
 
-    div[data-baseweb="select"] span {
-        color: #172033 !important;
-    }
+        div[data-baseweb="select"] span {
+            color: #172033 !important;
+        }
 
-    div[data-testid="stNumberInput"] input {
-        color: #172033 !important;
-        background-color: white !important;
-    }
+        div[data-testid="stNumberInput"] input {
+            color: #172033 !important;
+            background-color: white !important;
+        }
 
-    div[data-testid="stDateInput"] input {
-        color: #172033 !important;
-        background-color: white !important;
-    }
+        div[data-testid="stDateInput"] input {
+            color: #172033 !important;
+            background-color: white !important;
+        }
 
-    .stButton > button {
-        border-radius: 10px;
-        font-weight: 700;
-    }
+        div[data-testid="stTextInput"] input {
+            color: #172033 !important;
+            background-color: white !important;
+        }
 
-    .stDownloadButton > button {
-        border-radius: 10px;
-        font-weight: 700;
-    }
+        .stButton > button {
+            border-radius: 10px;
+            font-weight: 700;
+        }
 
-    div[data-testid="stDataFrame"] {
-        border-radius: 12px;
-    }
+        .stDownloadButton > button {
+            border-radius: 10px;
+            font-weight: 700;
+        }
 
-    </style>
-    """, unsafe_allow_html=True)
+        div[data-testid="stDataFrame"] {
+            border-radius: 12px;
+        }
 
-
-# =========================================================
-# CSS - MODO NOTURNO
-# =========================================================
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
 else:
 
-    st.markdown("""
-    <style>
+    st.markdown(
+        """
+        <style>
 
-    .stApp {
-        background-color: #0b1120;
-        color: #e5e7eb;
-    }
+        .stApp {
+            background-color: #0b1120;
+            color: #e5e7eb;
+        }
 
-    [data-testid="stHeader"] {
-        background-color: #0b1120;
-    }
+        [data-testid="stHeader"] {
+            background-color: #0b1120;
+        }
 
-    [data-testid="stSidebar"] {
-        background: linear-gradient(
-            180deg,
-            #020617 0%,
-            #111827 100%
-        );
-    }
+        [data-testid="stSidebar"] {
+            background: linear-gradient(
+                180deg,
+                #020617 0%,
+                #111827 100%
+            );
+        }
 
-    [data-testid="stSidebar"] * {
-        color: #f8fafc !important;
-    }
+        [data-testid="stSidebar"] * {
+            color: #f8fafc !important;
+        }
 
-    h1 {
-        color: #60a5fa !important;
-        font-weight: 800;
-    }
+        h1 {
+            color: #60a5fa !important;
+            font-weight: 800;
+        }
 
-    h2, h3 {
-        color: #93c5fd !important;
-    }
+        h2,
+        h3 {
+            color: #93c5fd !important;
+        }
 
-    p {
-        color: #cbd5e1 !important;
-    }
+        p {
+            color: #cbd5e1 !important;
+        }
 
-    label {
-        color: #e5e7eb !important;
-    }
+        label {
+            color: #e5e7eb !important;
+        }
 
-    span {
-        color: #e5e7eb;
-    }
+        span {
+            color: #e5e7eb;
+        }
 
-    div[data-testid="stMetric"] {
-        background-color: #111827 !important;
-        padding: 18px;
-        border-radius: 15px;
-        border: 1px solid #263244;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.35);
-    }
+        div[data-testid="stMetric"] {
+            background-color: #111827 !important;
+            padding: 18px;
+            border-radius: 15px;
+            border: 1px solid #263244;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.35);
+        }
 
-    div[data-testid="stMetricLabel"] {
-        color: #94a3b8 !important;
-    }
+        div[data-testid="stMetricLabel"] {
+            color: #94a3b8 !important;
+        }
 
-    div[data-testid="stMetricValue"] {
-        color: #60a5fa !important;
-        font-weight: 800;
-    }
+        div[data-testid="stMetricValue"] {
+            color: #60a5fa !important;
+            font-weight: 800;
+        }
 
-    div[data-testid="stMetricDelta"] {
-        color: #94a3b8 !important;
-    }
+        div[data-baseweb="input"] {
+            background-color: #1e293b !important;
+            border: 1px solid #475569 !important;
+            border-radius: 10px !important;
+        }
 
-    div[data-baseweb="input"] {
-        background-color: #1e293b !important;
-        border: 1px solid #475569 !important;
-        border-radius: 10px !important;
-    }
+        div[data-baseweb="input"] input {
+            color: #ffffff !important;
+            background-color: #1e293b !important;
+            caret-color: #60a5fa !important;
+        }
 
-    div[data-baseweb="input"] input {
-        color: #ffffff !important;
-        background-color: #1e293b !important;
-        caret-color: #60a5fa !important;
-    }
+        div[data-baseweb="input"] input::placeholder {
+            color: #94a3b8 !important;
+        }
 
-    div[data-baseweb="input"] input::placeholder {
-        color: #94a3b8 !important;
-    }
+        div[data-baseweb="select"] > div {
+            background-color: #1e293b !important;
+            border: 1px solid #475569 !important;
+            color: #ffffff !important;
+        }
 
-    div[data-baseweb="select"] > div {
-        background-color: #1e293b !important;
-        border: 1px solid #475569 !important;
-        color: #ffffff !important;
-    }
+        div[data-baseweb="select"] span {
+            color: #ffffff !important;
+        }
 
-    div[data-baseweb="select"] span {
-        color: #ffffff !important;
-    }
+        div[data-baseweb="select"] input {
+            color: #ffffff !important;
+        }
 
-    div[data-baseweb="select"] input {
-        color: #ffffff !important;
-    }
+        ul[data-baseweb="menu"] {
+            background-color: #1e293b !important;
+        }
 
-    ul[data-baseweb="menu"] {
-        background-color: #1e293b !important;
-    }
+        li[data-baseweb="option"] {
+            background-color: #1e293b !important;
+            color: #ffffff !important;
+        }
 
-    li[data-baseweb="option"] {
-        background-color: #1e293b !important;
-        color: #ffffff !important;
-    }
+        li[data-baseweb="option"]:hover {
+            background-color: #334155 !important;
+        }
 
-    li[data-baseweb="option"]:hover {
-        background-color: #334155 !important;
-    }
+        div[data-testid="stNumberInput"] input {
+            color: #ffffff !important;
+            background-color: #1e293b !important;
+        }
 
-    div[data-testid="stNumberInput"] {
-        background-color: transparent !important;
-    }
+        div[data-testid="stDateInput"] input {
+            color: #ffffff !important;
+            background-color: #1e293b !important;
+        }
 
-    div[data-testid="stNumberInput"] input {
-        color: #ffffff !important;
-        background-color: #1e293b !important;
-    }
+        div[data-testid="stTextInput"] input {
+            color: #ffffff !important;
+            background-color: #1e293b !important;
+        }
 
-    div[data-testid="stDateInput"] input {
-        color: #ffffff !important;
-        background-color: #1e293b !important;
-    }
+        input[type="password"] {
+            color: #ffffff !important;
+            background-color: #1e293b !important;
+        }
 
-    div[data-testid="stTextInput"] input {
-        color: #ffffff !important;
-        background-color: #1e293b !important;
-    }
+        div[data-testid="stCheckbox"] label {
+            color: #e5e7eb !important;
+        }
 
-    input[type="password"] {
-        color: #ffffff !important;
-        background-color: #1e293b !important;
-    }
+        div[data-testid="stRadio"] label {
+            color: #e5e7eb !important;
+        }
 
-    div[data-testid="stCheckbox"] label {
-        color: #e5e7eb !important;
-    }
+        div[data-baseweb="tag"] {
+            background-color: #2563eb !important;
+        }
 
-    div[data-testid="stRadio"] label {
-        color: #e5e7eb !important;
-    }
+        div[data-baseweb="tag"] span {
+            color: white !important;
+        }
 
-    div[data-baseweb="tag"] {
-        background-color: #2563eb !important;
-    }
+        div[data-testid="stDataFrame"] {
+            border: 1px solid #334155;
+            border-radius: 12px;
+        }
 
-    div[data-baseweb="tag"] span {
-        color: white !important;
-    }
+        div[data-testid="stAlert"] {
+            background-color: #172033 !important;
+            color: #e5e7eb !important;
+            border-radius: 12px;
+        }
 
-    div[data-testid="stDataFrame"] {
-        border: 1px solid #334155;
-        border-radius: 12px;
-    }
+        .stButton > button {
+            border-radius: 10px;
+            font-weight: 700;
+            background-color: #1e40af;
+            color: white;
+            border: 1px solid #3b82f6;
+        }
 
-    div[data-testid="stAlert"] {
-        background-color: #172033 !important;
-        color: #e5e7eb !important;
-        border-radius: 12px;
-    }
+        .stButton > button:hover {
+            background-color: #2563eb;
+            color: white;
+        }
 
-    .stButton > button {
-        border-radius: 10px;
-        font-weight: 700;
-        background-color: #1e40af;
-        color: white;
-        border: 1px solid #3b82f6;
-    }
+        .stDownloadButton > button {
+            border-radius: 10px;
+            font-weight: 700;
+            background-color: #1e40af;
+            color: white;
+        }
 
-    .stButton > button:hover {
-        background-color: #2563eb;
-        color: white;
-    }
+        hr {
+            border-color: #334155 !important;
+        }
 
-    .stDownloadButton > button {
-        border-radius: 10px;
-        font-weight: 700;
-        background-color: #1e40af;
-        color: white;
-    }
+        div[data-testid="stExpander"] {
+            background-color: #111827 !important;
+            border: 1px solid #334155 !important;
+            border-radius: 12px;
+        }
 
-    hr {
-        border-color: #334155 !important;
-    }
-
-    div[data-testid="stExpander"] {
-        background-color: #111827 !important;
-        border: 1px solid #334155 !important;
-        border-radius: 12px;
-    }
-
-    </style>
-    """, unsafe_allow_html=True)
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
 
 # =========================================================
@@ -568,44 +515,61 @@ if "autenticado" not in st.session_state:
 
 if not st.session_state.autenticado:
 
-    if st.session_state.modo_noturno:
-
-        fundo_login = "#111827"
-        cor_titulo = "#60a5fa"
-        cor_texto = "#cbd5e1"
-
-    else:
-
-        fundo_login = "#ffffff"
-        cor_titulo = "#173b8f"
-        cor_texto = "#64748b"
-
     st.markdown(
-        f"""
-        <div style="
-            max-width:450px;
-            margin:80px auto;
-            padding:35px;
-            background:{fundo_login};
-            border-radius:20px;
-            box-shadow:0 10px 40px rgba(0,0,0,0.15);
-            text-align:center;
-        ">
-            <div style="font-size:65px;">📊</div>
+        """
+        <style>
 
-            <h1 style="
-                color:{cor_titulo};
-                margin-bottom:5px;
-            ">
+        .login-box {
+            max-width: 460px;
+            margin: 70px auto 25px auto;
+            padding: 35px;
+            border-radius: 22px;
+            text-align: center;
+            background: linear-gradient(
+                145deg,
+                #ffffff,
+                #f1f5f9
+            );
+            border: 1px solid #e2e8f0;
+            box-shadow:
+                0 15px 45px rgba(15,23,42,0.16);
+        }
+
+        .login-icon {
+            font-size: 64px;
+            line-height: 1;
+            margin-bottom: 12px;
+        }
+
+        .login-title {
+            font-size: 40px;
+            font-weight: 800;
+            color: #173b8f;
+            margin-bottom: 5px;
+        }
+
+        .login-subtitle {
+            color: #64748b;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        </style>
+
+        <div class="login-box">
+
+            <div class="login-icon">
+                📊
+            </div>
+
+            <div class="login-title">
                 PRODUCT
-            </h1>
+            </div>
 
-            <p style="
-                color:{cor_texto};
-                font-size:16px;
-            ">
+            <div class="login-subtitle">
                 Sistema de Controle de Produtividade
-            </p>
+            </div>
+
         </div>
         """,
         unsafe_allow_html=True
@@ -617,7 +581,8 @@ if not st.session_state.autenticado:
 
         senha = st.text_input(
             "🔐 Senha de acesso",
-            type="password"
+            type="password",
+            key="senha_login"
         )
 
         entrar = st.button(
@@ -647,7 +612,9 @@ if not st.session_state.autenticado:
 # MENU LATERAL
 # =========================================================
 
-st.sidebar.markdown("# 📊 PRODUCT")
+st.sidebar.markdown(
+    "# 📊 PRODUCT"
+)
 
 st.sidebar.caption(
     "Sistema de Controle de Produtividade"
@@ -657,7 +624,7 @@ st.sidebar.divider()
 
 
 # =========================================================
-# BOTÃO MODO NOTURNO
+# MODO NOTURNO
 # =========================================================
 
 if st.session_state.modo_noturno:
@@ -683,6 +650,10 @@ if st.sidebar.button(
 
 st.sidebar.divider()
 
+
+# =========================================================
+# MENU
+# =========================================================
 
 pagina = st.sidebar.radio(
     "MENU",
@@ -716,7 +687,9 @@ if st.sidebar.button(
 
 if pagina == "📈 Dashboard":
 
-    st.title("📊 Dashboard")
+    st.title(
+        "📊 Dashboard"
+    )
 
     st.caption(
         "Visão geral da produtividade da equipe"
@@ -738,12 +711,16 @@ if pagina == "📈 Dashboard":
     # FILTROS
     # -----------------------------------------------------
 
-    st.subheader("🔎 Filtros")
+    st.subheader(
+        "🔎 Filtros"
+    )
 
     col1, col2, col3 = st.columns(3)
 
     lista_colaboradores = sorted(
-        df["colaborador"].unique().tolist()
+        df["colaborador"]
+        .unique()
+        .tolist()
     )
 
     with col1:
@@ -835,7 +812,11 @@ if pagina == "📈 Dashboard":
         df_filtrado["faturado"].sum()
     )
 
-    total_sysvet = erro + exito
+    total_sysvet = (
+        erro
+        +
+        exito
+    )
 
     produtividade = (
         erro
@@ -859,7 +840,9 @@ if pagina == "📈 Dashboard":
     # CARDS
     # -----------------------------------------------------
 
-    st.subheader("📌 Indicadores")
+    st.subheader(
+        "📌 Indicadores"
+    )
 
     c1, c2, c3, c4, c5 = st.columns(5)
 
@@ -914,10 +897,22 @@ if pagina == "📈 Dashboard":
         df_filtrado
         .groupby("colaborador")
         .agg(
-            SYSVET_Erro=("sysvet_erro", "sum"),
-            SYSVET_Exito=("sysvet_exito", "sum"),
-            Faturado=("faturado", "sum"),
-            Total=("produtividade_total", "sum")
+            SYSVET_Erro=(
+                "sysvet_erro",
+                "sum"
+            ),
+            SYSVET_Exito=(
+                "sysvet_exito",
+                "sum"
+            ),
+            Faturado=(
+                "faturado",
+                "sum"
+            ),
+            Total=(
+                "produtividade_total",
+                "sum"
+            )
         )
         .reset_index()
         .sort_values(
@@ -969,7 +964,9 @@ if pagina == "📈 Dashboard":
 
     with col1:
 
-        st.subheader("📊 Composição")
+        st.subheader(
+            "📊 Composição"
+        )
 
         composicao = pd.DataFrame({
             "Tipo": [
@@ -1009,7 +1006,9 @@ if pagina == "📈 Dashboard":
 
     with col2:
 
-        st.subheader("📈 Evolução")
+        st.subheader(
+            "📈 Evolução"
+        )
 
         diario = (
             df_filtrado
@@ -1333,13 +1332,13 @@ elif pagina == "📋 Histórico":
             "🗑️ Excluir todos os registros de uma data"
         )
 
-        st.info(
-            "Selecione uma data abaixo para visualizar "
-            "os lançamentos daquele dia."
+        st.warning(
+            "⚠️ Esta opção excluirá TODOS os lançamentos "
+            "da data escolhida, independentemente do colaborador."
         )
 
         data_exclusao = st.date_input(
-            "📅 Data que deseja excluir",
+            "📅 Escolha a data que deseja excluir",
             value=date.today(),
             key="data_exclusao"
         )
@@ -1351,18 +1350,23 @@ elif pagina == "📋 Histórico":
         if registros_data.empty:
 
             st.info(
-                "ℹ️ Não existem registros nessa data."
+                "Nenhum registro encontrado para esta data."
             )
 
         else:
 
-            st.warning(
-                f"⚠️ Foram encontrados "
-                f"{len(registros_data)} registro(s) "
-                f"em {data_exclusao.strftime('%d/%m/%Y')}."
+            total_data = int(
+                registros_data["produtividade_total"].sum()
             )
 
-            visualizar = registros_data[
+            st.error(
+                f"⚠️ Foram encontrados "
+                f"{len(registros_data)} lançamento(s) "
+                f"nesta data, totalizando "
+                f"{total_data} de produtividade."
+            )
+
+            visualizacao_data = registros_data[
                 [
                     "id",
                     "data",
@@ -1374,12 +1378,12 @@ elif pagina == "📋 Histórico":
                 ]
             ].copy()
 
-            visualizar["data"] = (
-                visualizar["data"]
+            visualizacao_data["data"] = (
+                visualizacao_data["data"]
                 .dt.strftime("%d/%m/%Y")
             )
 
-            visualizar.columns = [
+            visualizacao_data.columns = [
                 "ID",
                 "Data",
                 "Colaborador",
@@ -1390,45 +1394,47 @@ elif pagina == "📋 Histórico":
             ]
 
             st.dataframe(
-                visualizar,
+                visualizacao_data,
                 use_container_width=True,
                 hide_index=True
             )
 
-            st.markdown(
-                "### ⚠️ Confirmação"
-            )
-
             confirmar_data = st.checkbox(
-                "Sim, quero excluir TODOS os registros dessa data.",
+                "☑️ Eu confirmo que quero excluir TODOS os registros desta data.",
                 key="confirmar_exclusao_data"
             )
 
             if confirmar_data:
 
                 if st.button(
-                    "🗑️ EXCLUIR TODOS OS REGISTROS DA DATA",
+                    "🗑️ EXCLUIR TODOS OS REGISTROS DESTA DATA",
                     type="primary",
                     use_container_width=True,
-                    key="botao_excluir_data"
+                    key="excluir_data"
                 ):
 
-                    quantidade_excluida = excluir_por_data(
-                        data_exclusao
+                    conn = conectar()
+
+                    cursor = conn.cursor()
+
+                    cursor.execute(
+                        """
+                        DELETE FROM produtividade
+                        WHERE data = ?
+                        """,
+                        (str(data_exclusao),)
                     )
 
-                    if quantidade_excluida > 0:
+                    quantidade_excluida = cursor.rowcount
 
-                        st.success(
-                            f"✅ {quantidade_excluida} "
-                            "registro(s) foram excluídos com sucesso."
-                        )
+                    conn.commit()
+                    conn.close()
 
-                    else:
-
-                        st.warning(
-                            "Nenhum registro foi excluído."
-                        )
+                    st.success(
+                        f"✅ {quantidade_excluida} registro(s) "
+                        f"da data {data_exclusao.strftime('%d/%m/%Y')} "
+                        f"foram excluído(s) com sucesso."
+                    )
 
                     st.rerun()
 
@@ -1455,48 +1461,49 @@ elif pagina == "📋 Histórico":
         ].iloc[0]
 
         st.info(
-            f"👤 {registro['colaborador']} | "
-            f"📅 {registro['data'].strftime('%d/%m/%Y')} | "
+            f"👤 Colaborador: {registro['colaborador']}  |  "
+            f"📅 Data: {registro['data'].strftime('%d/%m/%Y')}  |  "
             f"📊 Produtividade: "
             f"{int(registro['produtividade_total'])}"
         )
 
         confirmar_individual = st.checkbox(
-            "Sim, quero excluir este lançamento.",
+            "☑️ Confirmo que quero excluir este lançamento.",
             key="confirmar_exclusao_individual"
         )
 
         if confirmar_individual:
 
             if st.button(
-                "🗑️ EXCLUIR LANÇAMENTO",
+                "🗑️ EXCLUIR LANÇAMENTO SELECIONADO",
                 type="primary",
                 use_container_width=True,
-                key="botao_excluir_individual"
+                key="excluir_individual"
             ):
 
-                quantidade_excluida = excluir_registro(
-                    id_escolhido
+                conn = conectar()
+
+                conn.execute(
+                    """
+                    DELETE FROM produtividade
+                    WHERE id = ?
+                    """,
+                    (int(id_escolhido),)
                 )
 
-                if quantidade_excluida > 0:
+                conn.commit()
+                conn.close()
 
-                    st.success(
-                        "✅ Lançamento excluído com sucesso."
-                    )
-
-                else:
-
-                    st.warning(
-                        "O lançamento não foi encontrado."
-                    )
+                st.success(
+                    "✅ Lançamento excluído com sucesso."
+                )
 
                 st.rerun()
 
         st.divider()
 
         # =================================================
-        # HISTÓRICO COMPLETO
+        # TODOS OS LANÇAMENTOS
         # =================================================
 
         st.subheader(
