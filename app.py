@@ -3,8 +3,8 @@ import sqlite3
 import pandas as pd
 import plotly.express as px
 from datetime import date
-from io import BytesIO
-
+import hashlib
+import io
 
 # =========================================================
 # CONFIGURAÇÃO
@@ -19,6 +19,156 @@ st.set_page_config(
 
 DB = "produtividade.db"
 
+# =========================================================
+# CSS - VISUAL MODERNO
+# =========================================================
+
+def aplicar_estilo(modo_escuro=False):
+
+    if modo_escuro:
+
+        fundo = "#0E1117"
+        card = "#161B22"
+        texto = "#FFFFFF"
+        texto_sec = "#A8B3C2"
+        borda = "#30363D"
+        sidebar = "#0B0F14"
+
+    else:
+
+        fundo = "#F4F7FB"
+        card = "#FFFFFF"
+        texto = "#172033"
+        texto_sec = "#667085"
+        borda = "#E4E7EC"
+        sidebar = "#FFFFFF"
+
+    st.markdown(
+        f"""
+        <style>
+
+        .stApp {{
+            background-color: {fundo};
+            color: {texto};
+        }}
+
+        section[data-testid="stSidebar"] {{
+            background-color: {sidebar};
+            border-right: 1px solid {borda};
+        }}
+
+        section[data-testid="stSidebar"] * {{
+            color: {texto} !important;
+        }}
+
+        h1, h2, h3, h4, h5, h6 {{
+            color: {texto} !important;
+        }}
+
+        p, label {{
+            color: {texto} !important;
+        }}
+
+        .metric-card {{
+            background: {card};
+            border: 1px solid {borda};
+            border-radius: 16px;
+            padding: 20px;
+            min-height: 130px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        }}
+
+        .metric-title {{
+            font-size: 14px;
+            color: {texto_sec};
+            margin-bottom: 8px;
+        }}
+
+        .metric-value {{
+            font-size: 30px;
+            font-weight: 700;
+            color: {texto};
+        }}
+
+        .metric-icon {{
+            font-size: 24px;
+            margin-bottom: 8px;
+        }}
+
+        .dashboard-header {{
+            background: linear-gradient(
+                135deg,
+                #2563EB,
+                #4F46E5
+            );
+            padding: 28px;
+            border-radius: 20px;
+            color: white;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 25px rgba(37,99,235,0.25);
+        }}
+
+        .dashboard-header h1 {{
+            color: white !important;
+            margin-bottom: 5px;
+        }}
+
+        .dashboard-header p {{
+            color: #E0E7FF !important;
+        }}
+
+        .section-card {{
+            background: {card};
+            border: 1px solid {borda};
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }}
+
+        div[data-testid="stDataFrame"] {{
+            border-radius: 12px;
+            overflow: hidden;
+        }}
+
+        .login-box {{
+            max-width: 450px;
+            margin: 80px auto;
+            background: {card};
+            border: 1px solid {borda};
+            border-radius: 20px;
+            padding: 35px;
+            box-shadow: 0 10px 35px rgba(0,0,0,0.10);
+        }}
+
+        .logo {{
+            text-align: center;
+            font-size: 48px;
+            margin-bottom: 5px;
+        }}
+
+        .logo-title {{
+            text-align: center;
+            font-size: 32px;
+            font-weight: 800;
+            color: {texto};
+        }}
+
+        .logo-subtitle {{
+            text-align: center;
+            color: {texto_sec};
+            margin-bottom: 25px;
+        }}
+
+        .stButton > button {{
+            border-radius: 10px;
+            font-weight: 600;
+        }}
+
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
 
 # =========================================================
 # BANCO DE DADOS
@@ -28,11 +178,18 @@ def conectar():
     return sqlite3.connect(DB)
 
 
+def hash_senha(senha):
+    return hashlib.sha256(
+        senha.encode("utf-8")
+    ).hexdigest()
+
+
 def criar_banco():
 
     conn = conectar()
     cursor = conn.cursor()
 
+    # Colaboradores
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS colaboradores (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,6 +197,7 @@ def criar_banco():
         )
     """)
 
+    # Produtividade
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS produtividade (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,29 +209,31 @@ def criar_banco():
         )
     """)
 
+    # Configurações
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS configuracoes (
-            id INTEGER PRIMARY KEY,
+            id INTEGER PRIMARY KEY CHECK (id = 1),
             senha TEXT NOT NULL
         )
     """)
 
+    # Senha inicial
     cursor.execute("""
-        SELECT COUNT(*)
+        SELECT senha
         FROM configuracoes
+        WHERE id = 1
     """)
 
-    quantidade = cursor.fetchone()[0]
+    resultado = cursor.fetchone()
 
-    if quantidade == 0:
+    if resultado is None:
 
         cursor.execute(
             """
-            INSERT INTO configuracoes
-            (id, senha)
+            INSERT INTO configuracoes (id, senha)
             VALUES (1, ?)
             """,
-            ("2010",)
+            (hash_senha("2010"),)
         )
 
     conn.commit()
@@ -84,29 +244,31 @@ criar_banco()
 
 
 # =========================================================
-# FUNÇÕES
+# FUNÇÕES DE SENHA
 # =========================================================
 
-def buscar_senha():
+def verificar_senha(senha):
 
     conn = conectar()
 
     cursor = conn.cursor()
 
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT senha
         FROM configuracoes
         WHERE id = 1
-    """)
+        """
+    )
 
     resultado = cursor.fetchone()
 
     conn.close()
 
-    if resultado:
-        return resultado[0]
+    if resultado is None:
+        return False
 
-    return "2010"
+    return hash_senha(senha) == resultado[0]
 
 
 def alterar_senha(nova_senha):
@@ -119,12 +281,16 @@ def alterar_senha(nova_senha):
         SET senha = ?
         WHERE id = 1
         """,
-        (nova_senha,)
+        (hash_senha(nova_senha),)
     )
 
     conn.commit()
     conn.close()
 
+
+# =========================================================
+# FUNÇÕES DE DADOS
+# =========================================================
 
 def buscar_colaboradores():
 
@@ -161,34 +327,26 @@ def buscar_produtividade():
 
     if not df.empty:
 
-        df["data"] = pd.to_datetime(
-            df["data"]
-        )
+        df["data"] = pd.to_datetime(df["data"])
 
         df["total_sysvet"] = (
-            df["sysvet_erro"]
-            +
+            df["sysvet_erro"] +
             df["sysvet_exito"]
         )
 
         df["produtividade_total"] = (
-            df["sysvet_erro"]
-            +
-            df["sysvet_exito"]
-            +
+            df["sysvet_erro"] +
+            df["sysvet_exito"] +
             df["faturado"]
         )
 
         df["taxa_exito"] = df.apply(
-            lambda linha:
+            lambda x:
             (
-                linha["sysvet_exito"]
-                /
-                linha["total_sysvet"]
-                *
-                100
+                x["sysvet_exito"] /
+                x["total_sysvet"] * 100
             )
-            if linha["total_sysvet"] > 0
+            if x["total_sysvet"] > 0
             else 0,
             axis=1
         )
@@ -196,404 +354,127 @@ def buscar_produtividade():
     return df
 
 
-# =========================================================
-# MODO VISUAL
-# =========================================================
+def excluir_registros_data(data_excluir):
 
-if "modo_noturno" not in st.session_state:
-    st.session_state.modo_noturno = False
+    conn = conectar()
+
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        DELETE FROM produtividade
+        WHERE data = ?
+        """,
+        (str(data_excluir),)
+    )
+
+    quantidade = cursor.rowcount
+
+    conn.commit()
+    conn.close()
+
+    return quantidade
 
 
-# =========================================================
-# CSS - MODO CLARO
-# =========================================================
+def excluir_registro_id(registro_id):
 
-if not st.session_state.modo_noturno:
+    conn = conectar()
 
-    st.markdown("""
-    <style>
+    cursor = conn.cursor()
 
-    .stApp {
-        background-color: #f4f7fb;
-        color: #172033;
-    }
+    cursor.execute(
+        """
+        DELETE FROM produtividade
+        WHERE id = ?
+        """,
+        (int(registro_id),)
+    )
 
-    [data-testid="stSidebar"] {
-        background: linear-gradient(
-            180deg,
-            #0f172a 0%,
-            #173b8f 100%
-        );
-    }
+    quantidade = cursor.rowcount
 
-    [data-testid="stSidebar"] * {
-        color: white !important;
-    }
+    conn.commit()
+    conn.close()
 
-    h1 {
-        color: #173b8f !important;
-        font-weight: 800;
-    }
-
-    h2, h3 {
-        color: #1e3a8a !important;
-    }
-
-    p, label, span {
-        color: #263247;
-    }
-
-    div[data-testid="stMetric"] {
-        background: white;
-        padding: 18px;
-        border-radius: 15px;
-        border: 1px solid #e1e7ef;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-    }
-
-    div[data-testid="stMetricLabel"] {
-        color: #64748b !important;
-    }
-
-    div[data-testid="stMetricValue"] {
-        color: #173b8f !important;
-        font-weight: 800;
-    }
-
-    div[data-baseweb="input"] {
-        background-color: white !important;
-        border-radius: 10px;
-    }
-
-    div[data-baseweb="input"] input {
-        color: #172033 !important;
-        background-color: white !important;
-    }
-
-    div[data-baseweb="select"] > div {
-        background-color: white !important;
-        color: #172033 !important;
-    }
-
-    div[data-baseweb="select"] span {
-        color: #172033 !important;
-    }
-
-    div[data-testid="stNumberInput"] input {
-        color: #172033 !important;
-        background-color: white !important;
-    }
-
-    div[data-testid="stDateInput"] input {
-        color: #172033 !important;
-        background-color: white !important;
-    }
-
-    div[data-testid="stTextInput"] input {
-        color: #172033 !important;
-        background-color: white !important;
-    }
-
-    .stButton > button {
-        border-radius: 10px;
-        font-weight: 700;
-    }
-
-    .stDownloadButton > button {
-        border-radius: 10px;
-        font-weight: 700;
-    }
-
-    div[data-testid="stDataFrame"] {
-        border-radius: 12px;
-    }
-
-    </style>
-    """, unsafe_allow_html=True)
+    return quantidade
 
 
 # =========================================================
-# CSS - MODO NOTURNO
-# =========================================================
-
-else:
-
-    st.markdown("""
-    <style>
-
-    .stApp {
-        background-color: #0b1120;
-        color: #e5e7eb;
-    }
-
-    [data-testid="stHeader"] {
-        background-color: #0b1120;
-    }
-
-    [data-testid="stSidebar"] {
-        background: linear-gradient(
-            180deg,
-            #020617 0%,
-            #111827 100%
-        );
-    }
-
-    [data-testid="stSidebar"] * {
-        color: #f8fafc !important;
-    }
-
-    h1 {
-        color: #60a5fa !important;
-        font-weight: 800;
-    }
-
-    h2, h3 {
-        color: #93c5fd !important;
-    }
-
-    p {
-        color: #cbd5e1 !important;
-    }
-
-    label {
-        color: #e5e7eb !important;
-    }
-
-    span {
-        color: #e5e7eb;
-    }
-
-    div[data-testid="stMetric"] {
-        background-color: #111827 !important;
-        padding: 18px;
-        border-radius: 15px;
-        border: 1px solid #263244;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.35);
-    }
-
-    div[data-testid="stMetricLabel"] {
-        color: #94a3b8 !important;
-    }
-
-    div[data-testid="stMetricValue"] {
-        color: #60a5fa !important;
-        font-weight: 800;
-    }
-
-    div[data-baseweb="input"] {
-        background-color: #1e293b !important;
-        border: 1px solid #475569 !important;
-        border-radius: 10px !important;
-    }
-
-    div[data-baseweb="input"] input {
-        color: #ffffff !important;
-        background-color: #1e293b !important;
-        caret-color: #60a5fa !important;
-    }
-
-    div[data-baseweb="input"] input::placeholder {
-        color: #94a3b8 !important;
-    }
-
-    div[data-baseweb="select"] > div {
-        background-color: #1e293b !important;
-        border: 1px solid #475569 !important;
-        color: #ffffff !important;
-    }
-
-    div[data-baseweb="select"] span {
-        color: #ffffff !important;
-    }
-
-    div[data-baseweb="select"] input {
-        color: #ffffff !important;
-    }
-
-    ul[data-baseweb="menu"] {
-        background-color: #1e293b !important;
-    }
-
-    li[data-baseweb="option"] {
-        background-color: #1e293b !important;
-        color: #ffffff !important;
-    }
-
-    li[data-baseweb="option"]:hover {
-        background-color: #334155 !important;
-    }
-
-    div[data-testid="stNumberInput"] input {
-        color: #ffffff !important;
-        background-color: #1e293b !important;
-    }
-
-    div[data-testid="stDateInput"] input {
-        color: #ffffff !important;
-        background-color: #1e293b !important;
-    }
-
-    div[data-testid="stTextInput"] input {
-        color: #ffffff !important;
-        background-color: #1e293b !important;
-    }
-
-    input[type="password"] {
-        color: #ffffff !important;
-        background-color: #1e293b !important;
-    }
-
-    div[data-testid="stCheckbox"] label {
-        color: #e5e7eb !important;
-    }
-
-    div[data-testid="stRadio"] label {
-        color: #e5e7eb !important;
-    }
-
-    div[data-baseweb="tag"] {
-        background-color: #2563eb !important;
-    }
-
-    div[data-baseweb="tag"] span {
-        color: white !important;
-    }
-
-    div[data-testid="stDataFrame"] {
-        border: 1px solid #334155;
-        border-radius: 12px;
-    }
-
-    div[data-testid="stAlert"] {
-        background-color: #172033 !important;
-        color: #e5e7eb !important;
-        border-radius: 12px;
-    }
-
-    .stButton > button {
-        border-radius: 10px;
-        font-weight: 700;
-        background-color: #1e40af;
-        color: white;
-        border: 1px solid #3b82f6;
-    }
-
-    .stButton > button:hover {
-        background-color: #2563eb;
-        color: white;
-    }
-
-    .stDownloadButton > button {
-        border-radius: 10px;
-        font-weight: 700;
-        background-color: #1e40af;
-        color: white;
-    }
-
-    hr {
-        border-color: #334155 !important;
-    }
-
-    div[data-testid="stExpander"] {
-        background-color: #111827 !important;
-        border: 1px solid #334155 !important;
-        border-radius: 12px;
-    }
-
-    </style>
-    """, unsafe_allow_html=True)
-
-
-# =========================================================
-# LOGIN
+# SESSÃO
 # =========================================================
 
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
 
+if "modo_escuro" not in st.session_state:
+    st.session_state.modo_escuro = False
+
+
+# =========================================================
+# ESTILO
+# =========================================================
+
+aplicar_estilo(
+    st.session_state.modo_escuro
+)
+
+
+# =========================================================
+# TELA DE LOGIN
+# =========================================================
 
 if not st.session_state.autenticado:
 
-    if st.session_state.modo_noturno:
-
-        fundo_login = "#111827"
-        cor_titulo = "#60a5fa"
-        cor_texto = "#cbd5e1"
-
-    else:
-
-        fundo_login = "#ffffff"
-        cor_titulo = "#173b8f"
-        cor_texto = "#64748b"
-
     st.markdown(
-        f"""
-        <div style="
-            max-width:450px;
-            margin:80px auto 30px auto;
-            padding:35px;
-            background:{fundo_login};
-            border-radius:20px;
-            box-shadow:0 10px 40px rgba(0,0,0,0.15);
-            text-align:center;
-        ">
-
-            <div style="
-                font-size:65px;
-                margin-bottom:10px;
-            ">
-                📊
-            </div>
-
-            <h1 style="
-                color:{cor_titulo};
-                margin-bottom:5px;
-            ">
-                PRODUCT
-            </h1>
-
-            <p style="
-                color:{cor_texto};
-                font-size:16px;
-            ">
-                Sistema de Controle de Produtividade
-            </p>
-
-        </div>
-        """,
+        '<div class="login-box">',
         unsafe_allow_html=True
     )
 
-    col1, col2, col3 = st.columns(
-        [1, 2, 1]
+    st.markdown(
+        '<div class="logo">📊</div>',
+        unsafe_allow_html=True
     )
 
-    with col2:
+    st.markdown(
+        '<div class="logo-title">PRODUCT</div>',
+        unsafe_allow_html=True
+    )
 
-        senha = st.text_input(
-            "🔐 Senha de acesso",
-            type="password"
-        )
+    st.markdown(
+        '<div class="logo-subtitle">'
+        'Sistema de Controle de Produtividade'
+        '</div>',
+        unsafe_allow_html=True
+    )
 
-        entrar = st.button(
-            "🔓 ENTRAR",
-            use_container_width=True,
-            type="primary"
-        )
+    senha = st.text_input(
+        "🔐 Senha de acesso",
+        type="password",
+        placeholder="Digite sua senha"
+    )
 
-        if entrar:
+    entrar = st.button(
+        "🔓 ENTRAR",
+        use_container_width=True
+    )
 
-            if senha == buscar_senha():
+    if entrar:
 
-                st.session_state.autenticado = True
+        if verificar_senha(senha):
 
-                st.rerun()
+            st.session_state.autenticado = True
 
-            else:
+            st.rerun()
 
-                st.error(
-                    "❌ Senha incorreta."
-                )
+        else:
+
+            st.error(
+                "❌ Senha incorreta."
+            )
+
+    st.markdown(
+        '</div>',
+        unsafe_allow_html=True
+    )
 
     st.stop()
 
@@ -603,66 +484,60 @@ if not st.session_state.autenticado:
 # =========================================================
 
 st.sidebar.markdown(
-    "# 📊 PRODUCT"
-)
-
-st.sidebar.caption(
-    "Sistema de Controle de Produtividade"
+    """
+    <div style="
+        text-align:center;
+        padding:10px 0 20px 0;
+    ">
+        <div style="font-size:42px;">📊</div>
+        <div style="
+            font-size:26px;
+            font-weight:800;
+        ">
+            PRODUCT
+        </div>
+        <div style="
+            font-size:12px;
+            color:#667085;
+        ">
+            Controle de Produtividade
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True
 )
 
 st.sidebar.divider()
-
-
-# =========================================================
-# MODO CLARO / ESCURO
-# =========================================================
-
-if st.session_state.modo_noturno:
-
-    texto_modo = "☀️ MODO CLARO"
-
-else:
-
-    texto_modo = "🌙 MODO NOTURNO"
-
-
-if st.sidebar.button(
-    texto_modo,
-    use_container_width=True
-):
-
-    st.session_state.modo_noturno = (
-        not st.session_state.modo_noturno
-    )
-
-    st.rerun()
-
-
-st.sidebar.divider()
-
-
-# =========================================================
-# MENU
-# =========================================================
 
 pagina = st.sidebar.radio(
-    "MENU",
+    "MENU PRINCIPAL",
     [
         "📈 Dashboard",
         "📝 Lançar produtividade",
         "👥 Colaboradores",
         "📋 Histórico",
-        "📥 Exportar",
-        "🔐 Alterar senha"
+        "🗑️ Gerenciar registros",
+        "⚙️ Configurações",
+        "📥 Exportar"
     ]
 )
 
-
 st.sidebar.divider()
+
+modo = st.sidebar.toggle(
+    "🌙 Modo noturno",
+    value=st.session_state.modo_escuro
+)
+
+if modo != st.session_state.modo_escuro:
+
+    st.session_state.modo_escuro = modo
+
+    st.rerun()
 
 
 if st.sidebar.button(
-    "🚪 SAIR",
+    "🚪 Sair",
     use_container_width=True
 ):
 
@@ -677,651 +552,481 @@ if st.sidebar.button(
 
 if pagina == "📈 Dashboard":
 
-    st.title(
-        "📊 Dashboard"
-    )
-
-    st.caption(
-        "Visão geral da produtividade da equipe"
-    )
-
     df = buscar_produtividade()
+
+    st.markdown(
+        """
+        <div class="dashboard-header">
+            <h1>📊 Dashboard de Produtividade</h1>
+            <p>
+                Acompanhe o desempenho da equipe
+                de forma rápida e visual.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
     if df.empty:
 
         st.info(
-            "Ainda não existem registros."
+            "Ainda não existem registros de produtividade."
         )
 
-        st.stop()
+    else:
 
-    st.divider()
+        # =================================================
+        # FILTROS
+        # =================================================
 
-    # =====================================================
-    # FILTROS
-    # =====================================================
+        st.subheader("🔎 Filtros")
 
-    st.subheader(
-        "🔎 Filtros"
-    )
+        f1, f2, f3 = st.columns(3)
 
-    col1, col2, col3 = st.columns(3)
+        data_min = df["data"].min().date()
+        data_max = df["data"].max().date()
 
-    lista_colaboradores = sorted(
-        df["colaborador"]
-        .unique()
-        .tolist()
-    )
+        with f1:
 
-    with col1:
+            periodo = st.date_input(
+                "📅 Período",
+                value=(data_min, data_max),
+                min_value=data_min,
+                max_value=data_max
+            )
 
-        colaborador = st.selectbox(
-            "👤 Colaborador",
-            [
-                "Todos os colaboradores"
-            ]
-            +
-            lista_colaboradores,
-            key="dashboard_colaborador"
-        )
+        with f2:
 
-    data_min = df["data"].min().date()
-    data_max = df["data"].max().date()
+            colaboradores = sorted(
+                df["colaborador"].unique().tolist()
+            )
 
-    with col2:
+            colaborador_filtro = st.selectbox(
+                "👤 Colaborador",
+                ["Todos os colaboradores"] + colaboradores
+            )
 
-        periodo = st.date_input(
-            "📅 Período",
-            value=(data_min, data_max),
-            min_value=data_min,
-            max_value=data_max,
-            key="dashboard_periodo"
-        )
+        with f3:
 
-    with col3:
+            tipos = st.multiselect(
+                "📊 Indicadores",
+                [
+                    "SYSVET Erro",
+                    "SYSVET Êxito",
+                    "Faturado"
+                ],
+                default=[
+                    "SYSVET Erro",
+                    "SYSVET Êxito",
+                    "Faturado"
+                ]
+            )
 
-        st.write("")
+        # =================================================
+        # FILTRO DE DATA
+        # =================================================
 
-        if st.button(
-            "🔄 Atualizar Dashboard",
-            use_container_width=True
+        if (
+            isinstance(periodo, tuple)
+            and len(periodo) == 2
         ):
 
-            st.rerun()
+            inicio, fim = periodo
 
-    # =====================================================
-    # FILTRO DE DATA
-    # =====================================================
+            df_filtrado = df[
+                (df["data"].dt.date >= inicio) &
+                (df["data"].dt.date <= fim)
+            ].copy()
 
-    if (
-        isinstance(periodo, tuple)
-        and len(periodo) == 2
-    ):
+        else:
 
-        inicio, fim = periodo
+            df_filtrado = df.copy()
 
-        df_filtrado = df[
-            (df["data"].dt.date >= inicio)
-            &
-            (df["data"].dt.date <= fim)
-        ].copy()
+        # =================================================
+        # FILTRO COLABORADOR
+        # =================================================
 
-    else:
+        if colaborador_filtro != "Todos os colaboradores":
 
-        df_filtrado = df.copy()
+            df_filtrado = df_filtrado[
+                df_filtrado["colaborador"]
+                == colaborador_filtro
+            ]
 
-    # =====================================================
-    # FILTRO DE COLABORADOR
-    # =====================================================
+        # =================================================
+        # INDICADORES
+        # =================================================
 
-    if colaborador != "Todos os colaboradores":
-
-        df_filtrado = df_filtrado[
-            df_filtrado["colaborador"]
-            ==
-            colaborador
-        ].copy()
-
-    if df_filtrado.empty:
-
-        st.warning(
-            "Não existem registros para os filtros selecionados."
+        erro = int(
+            df_filtrado["sysvet_erro"].sum()
         )
 
-        st.stop()
-
-    # =====================================================
-    # INDICADORES
-    # =====================================================
-
-    erro = int(
-        df_filtrado["sysvet_erro"].sum()
-    )
-
-    exito = int(
-        df_filtrado["sysvet_exito"].sum()
-    )
-
-    faturado = int(
-        df_filtrado["faturado"].sum()
-    )
-
-    total_sysvet = (
-        erro
-        +
-        exito
-    )
-
-    produtividade = (
-        erro
-        +
-        exito
-        +
-        faturado
-    )
-
-    taxa = (
-        exito
-        /
-        total_sysvet
-        *
-        100
-        if total_sysvet > 0
-        else 0
-    )
-
-    # =====================================================
-    # CARDS
-    # =====================================================
-
-    st.subheader(
-        "📌 Indicadores"
-    )
-
-    c1, c2, c3, c4, c5 = st.columns(5)
-
-    c1.metric(
-        "❌ SYSVET ERRO",
-        f"{erro:,}"
-    )
-
-    c2.metric(
-        "✅ SYSVET ÊXITO",
-        f"{exito:,}"
-    )
-
-    c3.metric(
-        "📁 FATURADO",
-        f"{faturado:,}"
-    )
-
-    c4.metric(
-        "📊 PRODUTIVIDADE",
-        f"{produtividade:,}"
-    )
-
-    c5.metric(
-        "🎯 TAXA DE ÊXITO",
-        f"{taxa:.1f}%"
-    )
-
-    st.divider()
-
-    # =====================================================
-    # COLABORADOR SELECIONADO
-    # =====================================================
-
-    if colaborador == "Todos os colaboradores":
-
-        st.success(
-            "👥 Visualizando toda a equipe."
+        exito = int(
+            df_filtrado["sysvet_exito"].sum()
         )
 
-    else:
-
-        st.success(
-            f"👤 Visualizando somente: {colaborador}"
+        faturado = int(
+            df_filtrado["faturado"].sum()
         )
 
-    # =====================================================
-    # RANKING
-    # =====================================================
+        total_sysvet = erro + exito
 
-    resumo = (
-        df_filtrado
-        .groupby("colaborador")
-        .agg(
-            SYSVET_Erro=(
-                "sysvet_erro",
-                "sum"
-            ),
-            SYSVET_Exito=(
-                "sysvet_exito",
-                "sum"
-            ),
-            Faturado=(
-                "faturado",
-                "sum"
-            ),
-            Total=(
-                "produtividade_total",
-                "sum"
+        produtividade_total = (
+            erro +
+            exito +
+            faturado
+        )
+
+        taxa_exito = (
+            exito / total_sysvet * 100
+            if total_sysvet > 0
+            else 0
+        )
+
+        st.divider()
+
+        # =================================================
+        # CARDS
+        # =================================================
+
+        c1, c2, c3, c4, c5 = st.columns(5)
+
+        with c1:
+
+            st.markdown(
+                f"""
+                <div class="metric-card">
+                    <div class="metric-icon">❌</div>
+                    <div class="metric-title">
+                        SYSVET ERRO
+                    </div>
+                    <div class="metric-value">
+                        {erro:,}
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        with c2:
+
+            st.markdown(
+                f"""
+                <div class="metric-card">
+                    <div class="metric-icon">✅</div>
+                    <div class="metric-title">
+                        SYSVET ÊXITO
+                    </div>
+                    <div class="metric-value">
+                        {exito:,}
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        with c3:
+
+            st.markdown(
+                f"""
+                <div class="metric-card">
+                    <div class="metric-icon">📁</div>
+                    <div class="metric-title">
+                        FATURADO
+                    </div>
+                    <div class="metric-value">
+                        {faturado:,}
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        with c4:
+
+            st.markdown(
+                f"""
+                <div class="metric-card">
+                    <div class="metric-icon">📊</div>
+                    <div class="metric-title">
+                        PRODUTIVIDADE
+                    </div>
+                    <div class="metric-value">
+                        {produtividade_total:,}
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        with c5:
+
+            st.markdown(
+                f"""
+                <div class="metric-card">
+                    <div class="metric-icon">🎯</div>
+                    <div class="metric-title">
+                        TAXA DE ÊXITO
+                    </div>
+                    <div class="metric-value">
+                        {taxa_exito:.1f}%
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # =================================================
+        # AVISO DO FILTRO
+        # =================================================
+
+        if colaborador_filtro != "Todos os colaboradores":
+
+            st.info(
+                f"👤 Visualizando exclusivamente a produtividade de: "
+                f"**{colaborador_filtro}**"
+            )
+
+        # =================================================
+        # RANKING
+        # =================================================
+
+        resumo = (
+            df_filtrado
+            .groupby("colaborador")
+            .agg(
+                SYSVET_Erro=("sysvet_erro", "sum"),
+                SYSVET_Exito=("sysvet_exito", "sum"),
+                Faturado=("faturado", "sum"),
+                Total=("produtividade_total", "sum")
+            )
+            .reset_index()
+            .sort_values(
+                "Total",
+                ascending=False
             )
         )
-        .reset_index()
-        .sort_values(
-            "Total",
-            ascending=False
-        )
-    )
 
-    st.subheader(
-        "🏆 Ranking de produtividade"
-    )
+        col1, col2 = st.columns(2)
 
-    grafico = px.bar(
-        resumo,
-        x="colaborador",
-        y="Total",
-        color="Total",
-        text="Total",
-        color_continuous_scale="Blues"
-    )
+        # =================================================
+        # GRÁFICO RANKING
+        # =================================================
 
-    grafico.update_traces(
-        textposition="outside"
-    )
+        with col1:
 
-    grafico.update_layout(
-        height=430,
-        xaxis_title="Colaborador",
-        yaxis_title="Produtividade",
-        coloraxis_showscale=False,
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)"
-    )
+            st.subheader("🏆 Ranking")
 
-    st.plotly_chart(
-        grafico,
-        use_container_width=True
-    )
+            if not resumo.empty:
 
-    # =====================================================
-    # GRÁFICOS
-    # =====================================================
+                fig = px.bar(
+                    resumo,
+                    x="colaborador",
+                    y="Total",
+                    color="Total",
+                    text="Total",
+                    color_continuous_scale=[
+                        "#60A5FA",
+                        "#2563EB",
+                        "#1D4ED8"
+                    ]
+                )
 
-    col1, col2 = st.columns(2)
+                fig.update_traces(
+                    textposition="outside"
+                )
 
-    with col1:
+                fig.update_layout(
+                    xaxis_title="",
+                    yaxis_title="Produtividade",
+                    template=(
+                        "plotly_dark"
+                        if st.session_state.modo_escuro
+                        else "plotly_white"
+                    ),
+                    margin=dict(
+                        l=10,
+                        r=10,
+                        t=20,
+                        b=10
+                    )
+                )
+
+                st.plotly_chart(
+                    fig,
+                    use_container_width=True
+                )
+
+        # =================================================
+        # COMPOSIÇÃO
+        # =================================================
+
+        with col2:
+
+            st.subheader("📊 Por tipo")
+
+            if not resumo.empty and tipos:
+
+                mapa = {
+                    "SYSVET Erro": "SYSVET_Erro",
+                    "SYSVET Êxito": "SYSVET_Exito",
+                    "Faturado": "Faturado"
+                }
+
+                colunas = [
+                    mapa[x]
+                    for x in tipos
+                ]
+
+                composicao = resumo.melt(
+                    id_vars="colaborador",
+                    value_vars=colunas,
+                    var_name="Tipo",
+                    value_name="Quantidade"
+                )
+
+                fig = px.bar(
+                    composicao,
+                    x="colaborador",
+                    y="Quantidade",
+                    color="Tipo",
+                    barmode="group",
+                    text="Quantidade"
+                )
+
+                fig.update_traces(
+                    textposition="outside"
+                )
+
+                fig.update_layout(
+                    xaxis_title="",
+                    yaxis_title="Quantidade",
+                    template=(
+                        "plotly_dark"
+                        if st.session_state.modo_escuro
+                        else "plotly_white"
+                    ),
+                    margin=dict(
+                        l=10,
+                        r=10,
+                        t=20,
+                        b=10
+                    )
+                )
+
+                st.plotly_chart(
+                    fig,
+                    use_container_width=True
+                )
+
+        # =================================================
+        # EVOLUÇÃO
+        # =================================================
 
         st.subheader(
-            "📊 Composição"
-        )
-
-        composicao = pd.DataFrame({
-            "Tipo": [
-                "SYSVET Erro",
-                "SYSVET Êxito",
-                "Faturado"
-            ],
-            "Quantidade": [
-                erro,
-                exito,
-                faturado
-            ]
-        })
-
-        pizza = px.pie(
-            composicao,
-            names="Tipo",
-            values="Quantidade",
-            hole=0.55,
-            color="Tipo",
-            color_discrete_map={
-                "SYSVET Erro": "#ef4444",
-                "SYSVET Êxito": "#22c55e",
-                "Faturado": "#2563eb"
-            }
-        )
-
-        pizza.update_layout(
-            height=400,
-            paper_bgcolor="rgba(0,0,0,0)"
-        )
-
-        st.plotly_chart(
-            pizza,
-            use_container_width=True
-        )
-
-    with col2:
-
-        st.subheader(
-            "📈 Evolução"
+            "📈 Evolução da produtividade"
         )
 
         diario = (
             df_filtrado
             .groupby("data")
             .agg(
-                Produtividade=(
-                    "produtividade_total",
-                    "sum"
-                ),
-                Faturado=(
-                    "faturado",
-                    "sum"
-                )
+                SYSVET_Erro=("sysvet_erro", "sum"),
+                SYSVET_Exito=("sysvet_exito", "sum"),
+                Faturado=("faturado", "sum"),
+                Total=("produtividade_total", "sum")
             )
             .reset_index()
         )
 
-        linha = px.line(
-            diario,
-            x="data",
-            y=[
-                "Produtividade",
-                "Faturado"
-            ],
-            markers=True
-        )
+        if not diario.empty:
 
-        linha.update_layout(
-            height=400,
-            xaxis_title="Data",
-            yaxis_title="Quantidade",
-            plot_bgcolor="rgba(0,0,0,0)",
-            paper_bgcolor="rgba(0,0,0,0)"
-        )
+            fig = px.line(
+                diario,
+                x="data",
+                y=[
+                    "SYSVET_Erro",
+                    "SYSVET_Exito",
+                    "Faturado",
+                    "Total"
+                ],
+                markers=True
+            )
 
-        st.plotly_chart(
-            linha,
-            use_container_width=True
-        )
+            fig.update_layout(
+                xaxis_title="Data",
+                yaxis_title="Quantidade",
+                template=(
+                    "plotly_dark"
+                    if st.session_state.modo_escuro
+                    else "plotly_white"
+                )
+            )
 
-    # =====================================================
-    # DETALHAMENTO INDIVIDUAL
-    # =====================================================
+            st.plotly_chart(
+                fig,
+                use_container_width=True
+            )
 
-    if colaborador != "Todos os colaboradores":
-
-        st.divider()
+        # =================================================
+        # RANKING DETALHADO
+        # =================================================
 
         st.subheader(
-            f"👤 Detalhamento de {colaborador}"
+            "🏆 Ranking detalhado"
         )
 
-        detalhes = df_filtrado[
-            [
-                "data",
-                "sysvet_erro",
-                "sysvet_exito",
-                "faturado",
-                "total_sysvet",
-                "produtividade_total",
-                "taxa_exito"
-            ]
-        ].copy()
+        if not resumo.empty:
 
-        detalhes["data"] = (
-            detalhes["data"]
-            .dt.strftime("%d/%m/%Y")
-        )
+            ranking = resumo.copy()
 
-        detalhes["taxa_exito"] = (
-            detalhes["taxa_exito"]
-            .round(1)
-            .astype(str)
-            +
-            "%"
-        )
-
-        detalhes.columns = [
-            "Data",
-            "SYSVET Erro",
-            "SYSVET Êxito",
-            "Faturado",
-            "Total SYSVET",
-            "Produtividade Total",
-            "Taxa de Êxito"
-        ]
-
-        st.dataframe(
-            detalhes,
-            use_container_width=True,
-            hide_index=True
-        )
-
-    # =====================================================
-    # GERENCIAR REGISTROS NO DASHBOARD
-    # =====================================================
-
-    st.divider()
-
-    st.subheader(
-        "🗑️ Gerenciar registros"
-    )
-
-    st.warning(
-        "⚠️ Atenção: as exclusões são permanentes."
-    )
-
-    col1, col2 = st.columns(2)
-
-    # =====================================================
-    # EXCLUIR POR DATA
-    # =====================================================
-
-    with col1:
-
-        st.markdown(
-            "### 📅 Excluir registros por data"
-        )
-
-        data_excluir = st.date_input(
-            "Selecione a data",
-            value=date.today(),
-            key="dashboard_data_excluir"
-        )
-
-        registros_data = df[
-            df["data"].dt.date == data_excluir
-        ].copy()
-
-        if registros_data.empty:
-
-            st.info(
-                "Nenhum registro encontrado nessa data."
+            ranking.insert(
+                0,
+                "Posição",
+                range(1, len(ranking) + 1)
             )
 
-        else:
-
-            quantidade = len(
-                registros_data
+            ranking["Taxa de Êxito"] = ranking.apply(
+                lambda x:
+                (
+                    x["SYSVET_Exito"] /
+                    (
+                        x["SYSVET_Erro"] +
+                        x["SYSVET_Exito"]
+                    ) * 100
+                )
+                if (
+                    x["SYSVET_Erro"] +
+                    x["SYSVET_Exito"]
+                ) > 0
+                else 0,
+                axis=1
             )
 
-            total_dia = int(
-                registros_data[
-                    "produtividade_total"
-                ].sum()
+            ranking["Taxa de Êxito"] = (
+                ranking["Taxa de Êxito"]
+                .round(1)
+                .astype(str)
+                + "%"
             )
 
-            st.error(
-                f"🚨 Existem {quantidade} "
-                f"registro(s) nessa data."
-            )
-
-            st.write(
-                f"📊 Produtividade total: **{total_dia:,}**"
-            )
-
-            colaboradores_dia = ", ".join(
-                registros_data[
-                    "colaborador"
-                ]
-                .unique()
-                .tolist()
-            )
-
-            st.write(
-                f"👥 Colaboradores: **{colaboradores_dia}**"
-            )
-
-            st.write(
-                "Lançamentos que serão excluídos:"
-            )
-
-            tabela_exclusao = registros_data[
-                [
-                    "id",
-                    "colaborador",
-                    "sysvet_erro",
-                    "sysvet_exito",
-                    "faturado",
-                    "produtividade_total"
-                ]
-            ].copy()
-
-            tabela_exclusao.columns = [
-                "ID",
+            ranking.columns = [
+                "Posição",
                 "Colaborador",
                 "SYSVET Erro",
                 "SYSVET Êxito",
                 "Faturado",
-                "Total"
+                "Total",
+                "Taxa de Êxito"
             ]
 
             st.dataframe(
-                tabela_exclusao,
+                ranking,
                 use_container_width=True,
                 hide_index=True
             )
-
-            confirmar_data = st.checkbox(
-                "Confirmo que desejo excluir TODOS os registros desta data.",
-                key="confirmar_data_dashboard"
-            )
-
-            if st.button(
-                "🗑️ EXCLUIR TODOS DA DATA",
-                type="primary",
-                use_container_width=True,
-                key="excluir_data_dashboard"
-            ):
-
-                if not confirmar_data:
-
-                    st.error(
-                        "⚠️ Marque a confirmação antes de excluir."
-                    )
-
-                else:
-
-                    conn = conectar()
-
-                    cursor = conn.cursor()
-
-                    cursor.execute(
-                        """
-                        DELETE FROM produtividade
-                        WHERE data = ?
-                        """,
-                        (str(data_excluir),)
-                    )
-
-                    quantidade_excluida = (
-                        cursor.rowcount
-                    )
-
-                    conn.commit()
-                    conn.close()
-
-                    st.success(
-                        f"✅ {quantidade_excluida} "
-                        "registro(s) excluído(s)!"
-                    )
-
-                    st.rerun()
-
-    # =====================================================
-    # EXCLUIR INDIVIDUAL
-    # =====================================================
-
-    with col2:
-
-        st.markdown(
-            "### 🗑️ Excluir lançamento individual"
-        )
-
-        ids_disponiveis = (
-            df["id"]
-            .tolist()
-        )
-
-        id_excluir = st.selectbox(
-            "Selecione o ID",
-            ids_disponiveis,
-            key="dashboard_id_excluir"
-        )
-
-        registro_excluir = df[
-            df["id"] == id_excluir
-        ].iloc[0]
-
-        st.info(
-            f"""
-👤 Colaborador: **{registro_excluir['colaborador']}**
-
-📅 Data: **{registro_excluir['data'].strftime('%d/%m/%Y')}**
-
-❌ SYSVET Erro: **{int(registro_excluir['sysvet_erro'])}**
-
-✅ SYSVET Êxito: **{int(registro_excluir['sysvet_exito'])}**
-
-📁 Faturado: **{int(registro_excluir['faturado'])}**
-
-📊 Total: **{int(registro_excluir['produtividade_total'])}**
-"""
-        )
-
-        confirmar_individual = st.checkbox(
-            "Confirmo que desejo excluir este lançamento.",
-            key="confirmar_individual_dashboard"
-        )
-
-        if st.button(
-            "🗑️ EXCLUIR LANÇAMENTO",
-            type="primary",
-            use_container_width=True,
-            key="excluir_individual_dashboard"
-        ):
-
-            if not confirmar_individual:
-
-                st.error(
-                    "⚠️ Marque a confirmação antes de excluir."
-                )
-
-            else:
-
-                conn = conectar()
-
-                conn.execute(
-                    """
-                    DELETE FROM produtividade
-                    WHERE id = ?
-                    """,
-                    (int(id_excluir),)
-                )
-
-                conn.commit()
-                conn.close()
-
-                st.success(
-                    "✅ Lançamento excluído com sucesso!"
-                )
-
-                st.rerun()
 
 
 # =========================================================
@@ -1330,9 +1035,7 @@ if pagina == "📈 Dashboard":
 
 elif pagina == "📝 Lançar produtividade":
 
-    st.title(
-        "📝 Lançar produtividade"
-    )
+    st.title("📝 Lançar produtividade")
 
     colaboradores = buscar_colaboradores()
 
@@ -1343,14 +1046,12 @@ elif pagina == "📝 Lançar produtividade":
         )
 
         st.info(
-            "Acesse o menu Colaboradores."
+            "Cadastre os colaboradores primeiro."
         )
 
     else:
 
-        with st.form(
-            "form_produtividade"
-        ):
+        with st.form("form_produtividade"):
 
             data_lancamento = st.date_input(
                 "📅 Data",
@@ -1362,9 +1063,9 @@ elif pagina == "📝 Lançar produtividade":
                 colaboradores["nome"].tolist()
             )
 
-            col1, col2, col3 = st.columns(3)
+            c1, c2, c3 = st.columns(3)
 
-            with col1:
+            with c1:
 
                 erro = st.number_input(
                     "❌ SYSVET com erro",
@@ -1373,7 +1074,7 @@ elif pagina == "📝 Lançar produtividade":
                     step=1
                 )
 
-            with col2:
+            with c2:
 
                 exito = st.number_input(
                     "✅ SYSVET com êxito",
@@ -1382,7 +1083,7 @@ elif pagina == "📝 Lançar produtividade":
                     step=1
                 )
 
-            with col3:
+            with c3:
 
                 faturado = st.number_input(
                     "📁 Faturado",
@@ -1392,10 +1093,8 @@ elif pagina == "📝 Lançar produtividade":
                 )
 
             total = (
-                erro
-                +
-                exito
-                +
+                erro +
+                exito +
                 faturado
             )
 
@@ -1449,24 +1148,21 @@ elif pagina == "📝 Lançar produtividade":
 
 elif pagina == "👥 Colaboradores":
 
-    st.title(
-        "👥 Colaboradores"
-    )
+    st.title("👥 Cadastro de colaboradores")
 
-    with st.form(
-        "form_colaborador"
-    ):
+    with st.form("form_colaborador"):
 
         nome = st.text_input(
-            "Nome do colaborador"
+            "Nome do colaborador",
+            placeholder="Digite o nome"
         )
 
-        cadastrar = st.form_submit_button(
+        adicionar = st.form_submit_button(
             "➕ CADASTRAR COLABORADOR",
             use_container_width=True
         )
 
-        if cadastrar:
+        if adicionar:
 
             if not nome.strip():
 
@@ -1482,8 +1178,7 @@ elif pagina == "👥 Colaboradores":
 
                     conn.execute(
                         """
-                        INSERT INTO colaboradores
-                        (nome)
+                        INSERT INTO colaboradores (nome)
                         VALUES (?)
                         """,
                         (nome.strip(),)
@@ -1505,6 +1200,10 @@ elif pagina == "👥 Colaboradores":
                     )
 
     st.divider()
+
+    st.subheader(
+        "👥 Colaboradores cadastrados"
+    )
 
     colaboradores = buscar_colaboradores()
 
@@ -1531,9 +1230,7 @@ elif pagina == "👥 Colaboradores":
 
 elif pagina == "📋 Histórico":
 
-    st.title(
-        "📋 Histórico de produtividade"
-    )
+    st.title("📋 Histórico de produtividade")
 
     df = buscar_produtividade()
 
@@ -1544,184 +1241,6 @@ elif pagina == "📋 Histórico":
         )
 
     else:
-
-        st.subheader(
-            "🗑️ Excluir registros por data"
-        )
-
-        data_exclusao = st.date_input(
-            "📅 Selecione a data",
-            value=date.today(),
-            key="historico_data_exclusao"
-        )
-
-        registros_data = df[
-            df["data"].dt.date
-            ==
-            data_exclusao
-        ]
-
-        if registros_data.empty:
-
-            st.info(
-                "Nenhum registro encontrado nessa data."
-            )
-
-        else:
-
-            st.warning(
-                f"⚠️ Existem {len(registros_data)} "
-                "registro(s) nessa data."
-            )
-
-            visualizar = registros_data[
-                [
-                    "id",
-                    "data",
-                    "colaborador",
-                    "sysvet_erro",
-                    "sysvet_exito",
-                    "faturado",
-                    "produtividade_total"
-                ]
-            ].copy()
-
-            visualizar["data"] = (
-                visualizar["data"]
-                .dt.strftime("%d/%m/%Y")
-            )
-
-            visualizar.columns = [
-                "ID",
-                "Data",
-                "Colaborador",
-                "SYSVET Erro",
-                "SYSVET Êxito",
-                "Faturado",
-                "Produtividade Total"
-            ]
-
-            st.dataframe(
-                visualizar,
-                use_container_width=True,
-                hide_index=True
-            )
-
-            confirmar = st.checkbox(
-                "Confirmo que quero excluir todos os registros desta data.",
-                key="confirmar_exclusao_historico"
-            )
-
-            if st.button(
-                "🗑️ EXCLUIR TODOS OS REGISTROS DA DATA",
-                type="primary",
-                use_container_width=True,
-                key="botao_exclusao_historico"
-            ):
-
-                if not confirmar:
-
-                    st.error(
-                        "⚠️ Marque a confirmação."
-                    )
-
-                else:
-
-                    conn = conectar()
-
-                    cursor = conn.cursor()
-
-                    cursor.execute(
-                        """
-                        DELETE FROM produtividade
-                        WHERE data = ?
-                        """,
-                        (str(data_exclusao),)
-                    )
-
-                    quantidade_excluida = cursor.rowcount
-
-                    conn.commit()
-                    conn.close()
-
-                    st.success(
-                        f"✅ {quantidade_excluida} "
-                        "registro(s) excluído(s)."
-                    )
-
-                    st.rerun()
-
-        st.divider()
-
-        st.subheader(
-            "🗑️ Excluir lançamento individual"
-        )
-
-        ids = df["id"].tolist()
-
-        id_escolhido = st.selectbox(
-            "Selecione o ID",
-            ids,
-            key="historico_id"
-        )
-
-        registro = df[
-            df["id"]
-            ==
-            id_escolhido
-        ].iloc[0]
-
-        st.info(
-            f"👤 {registro['colaborador']} | "
-            f"📅 {registro['data'].strftime('%d/%m/%Y')} | "
-            f"📊 Produtividade: "
-            f"{int(registro['produtividade_total'])}"
-        )
-
-        confirmar_individual = st.checkbox(
-            "Confirmo a exclusão deste lançamento.",
-            key="confirmar_individual_historico"
-        )
-
-        if st.button(
-            "🗑️ EXCLUIR LANÇAMENTO",
-            type="primary",
-            use_container_width=True,
-            key="botao_individual_historico"
-        ):
-
-            if not confirmar_individual:
-
-                st.error(
-                    "⚠️ Marque a confirmação."
-                )
-
-            else:
-
-                conn = conectar()
-
-                conn.execute(
-                    """
-                    DELETE FROM produtividade
-                    WHERE id = ?
-                    """,
-                    (int(id_escolhido),)
-                )
-
-                conn.commit()
-                conn.close()
-
-                st.success(
-                    "✅ Lançamento excluído."
-                )
-
-                st.rerun()
-
-        st.divider()
-
-        st.subheader(
-            "📋 Todos os lançamentos"
-        )
 
         historico = df[
             [
@@ -1746,8 +1265,7 @@ elif pagina == "📋 Histórico":
             historico["taxa_exito"]
             .round(1)
             .astype(str)
-            +
-            "%"
+            + "%"
         )
 
         historico.columns = [
@@ -1770,13 +1288,16 @@ elif pagina == "📋 Histórico":
 
 
 # =========================================================
-# EXPORTAR
+# GERENCIAR REGISTROS
 # =========================================================
 
-elif pagina == "📥 Exportar":
+elif pagina == "🗑️ Gerenciar registros":
 
-    st.title(
-        "📥 Exportar dados"
+    st.title("🗑️ Gerenciar registros")
+
+    st.warning(
+        "⚠️ Atenção: registros excluídos não poderão "
+        "ser recuperados pelo aplicativo."
     )
 
     df = buscar_produtividade()
@@ -1784,43 +1305,244 @@ elif pagina == "📥 Exportar":
     if df.empty:
 
         st.info(
-            "Nenhum dado disponível."
+            "Não existem registros para excluir."
         )
 
     else:
 
-        colaboradores = sorted(
-            df["colaborador"]
-            .unique()
-            .tolist()
+        # =================================================
+        # EXCLUIR POR DATA
+        # =================================================
+
+        st.subheader(
+            "📅 Excluir todos os registros de um dia"
         )
 
-        colaborador_exportar = st.selectbox(
-            "👤 Escolha o colaborador",
-            [
-                "Todos os colaboradores"
+        datas_disponiveis = sorted(
+            df["data"].dt.date.unique(),
+            reverse=True
+        )
+
+        data_excluir = st.selectbox(
+            "Selecione a data",
+            datas_disponiveis,
+            format_func=lambda x:
+            x.strftime("%d/%m/%Y")
+        )
+
+        quantidade_data = len(
+            df[
+                df["data"].dt.date == data_excluir
             ]
-            +
-            colaboradores
         )
 
-        if (
-            colaborador_exportar
-            ==
-            "Todos os colaboradores"
+        st.info(
+            f"Existem **{quantidade_data} lançamento(s)** "
+            f"para o dia "
+            f"**{data_excluir.strftime('%d/%m/%Y')}**."
+        )
+
+        confirmar_data = st.checkbox(
+            "Confirmo que quero excluir TODOS os registros desta data."
+        )
+
+        if st.button(
+            "🗑️ EXCLUIR TODOS OS REGISTROS DO DIA",
+            type="secondary",
+            use_container_width=True
         ):
 
-            dados = df.copy()
+            if not confirmar_data:
 
-        else:
+                st.error(
+                    "Marque a confirmação antes de excluir."
+                )
 
-            dados = df[
-                df["colaborador"]
-                ==
-                colaborador_exportar
-            ].copy()
+            else:
 
-        exportar = dados.copy()
+                quantidade = excluir_registros_data(
+                    data_excluir
+                )
+
+                st.success(
+                    f"✅ {quantidade} registro(s) "
+                    f"excluído(s) com sucesso."
+                )
+
+                st.rerun()
+
+        st.divider()
+
+        # =================================================
+        # EXCLUIR REGISTRO INDIVIDUAL
+        # =================================================
+
+        st.subheader(
+            "🗑️ Excluir lançamento individual"
+        )
+
+        registros = df.copy()
+
+        registros["descricao"] = (
+            "ID "
+            + registros["id"].astype(str)
+            + " | "
+            + registros["data"]
+            .dt.strftime("%d/%m/%Y")
+            + " | "
+            + registros["colaborador"]
+            + " | Total: "
+            + registros["produtividade_total"]
+            .astype(str)
+        )
+
+        registro_selecionado = st.selectbox(
+            "Selecione o lançamento",
+            registros["id"].tolist(),
+            format_func=lambda x:
+            registros.loc[
+                registros["id"] == x,
+                "descricao"
+            ].iloc[0]
+        )
+
+        confirmar_individual = st.checkbox(
+            "Confirmo que quero excluir este lançamento."
+        )
+
+        if st.button(
+            "🗑️ EXCLUIR LANÇAMENTO SELECIONADO",
+            type="secondary",
+            use_container_width=True
+        ):
+
+            if not confirmar_individual:
+
+                st.error(
+                    "Marque a confirmação antes de excluir."
+                )
+
+            else:
+
+                quantidade = excluir_registro_id(
+                    registro_selecionado
+                )
+
+                if quantidade > 0:
+
+                    st.success(
+                        "✅ Lançamento excluído com sucesso."
+                    )
+
+                else:
+
+                    st.error(
+                        "❌ Não foi possível encontrar o lançamento."
+                    )
+
+                st.rerun()
+
+
+# =========================================================
+# CONFIGURAÇÕES
+# =========================================================
+
+elif pagina == "⚙️ Configurações":
+
+    st.title("⚙️ Configurações")
+
+    st.subheader(
+        "🔐 Alterar senha de acesso"
+    )
+
+    st.info(
+        "A senha atual não será exibida."
+    )
+
+    with st.form("form_alterar_senha"):
+
+        senha_atual = st.text_input(
+            "🔐 Senha atual",
+            type="password"
+        )
+
+        nova_senha = st.text_input(
+            "🔑 Nova senha",
+            type="password"
+        )
+
+        confirmar_senha = st.text_input(
+            "🔑 Confirmar nova senha",
+            type="password"
+        )
+
+        alterar = st.form_submit_button(
+            "🔒 ALTERAR SENHA",
+            use_container_width=True
+        )
+
+        if alterar:
+
+            if not senha_atual:
+
+                st.error(
+                    "Informe a senha atual."
+                )
+
+            elif not verificar_senha(senha_atual):
+
+                st.error(
+                    "❌ A senha atual está incorreta."
+                )
+
+            elif not nova_senha:
+
+                st.error(
+                    "Informe uma nova senha."
+                )
+
+            elif len(nova_senha) < 4:
+
+                st.error(
+                    "A nova senha deve ter pelo menos 4 caracteres."
+                )
+
+            elif nova_senha != confirmar_senha:
+
+                st.error(
+                    "As novas senhas não são iguais."
+                )
+
+            else:
+
+                alterar_senha(
+                    nova_senha
+                )
+
+                st.success(
+                    "✅ Senha alterada com sucesso!"
+                )
+
+
+# =========================================================
+# EXPORTAR
+# =========================================================
+
+elif pagina == "📥 Exportar":
+
+    st.title("📥 Exportar dados")
+
+    df = buscar_produtividade()
+
+    if df.empty:
+
+        st.info(
+            "Nenhum dado disponível para exportação."
+        )
+
+    else:
+
+        exportar = df.copy()
 
         exportar["data"] = (
             exportar["data"]
@@ -1830,6 +1552,8 @@ elif pagina == "📥 Exportar":
         exportar["taxa_exito"] = (
             exportar["taxa_exito"]
             .round(1)
+            .astype(str)
+            + "%"
         )
 
         exportar = exportar[
@@ -1858,10 +1582,10 @@ elif pagina == "📥 Exportar":
             "Taxa de Êxito"
         ]
 
-        arquivo = BytesIO()
+        buffer = io.BytesIO()
 
         with pd.ExcelWriter(
-            arquivo,
+            buffer,
             engine="openpyxl"
         ) as writer:
 
@@ -1871,95 +1595,19 @@ elif pagina == "📥 Exportar":
                 sheet_name="Produtividade"
             )
 
-        arquivo.seek(0)
+        buffer.seek(0)
 
         st.success(
-            f"✅ {len(exportar)} registro(s) "
-            "pronto(s) para exportação."
+            "✅ Arquivo pronto para download."
         )
 
         st.download_button(
             label="📥 BAIXAR EXCEL",
-            data=arquivo,
+            data=buffer,
             file_name="PRODUCT_produtividade.xlsx",
             mime=(
-                "application/vnd.openxmlformats-"
-                "officedocument.spreadsheetml.sheet"
+                "application/vnd.openxmlformats-officedocument."
+                "spreadsheetml.sheet"
             ),
             use_container_width=True
         )
-
-
-# =========================================================
-# ALTERAR SENHA
-# =========================================================
-
-elif pagina == "🔐 Alterar senha":
-
-    st.title(
-        "🔐 Alterar senha"
-    )
-
-    st.info(
-        "Altere a senha utilizada para entrar no sistema."
-    )
-
-    with st.form(
-        "form_alterar_senha"
-    ):
-
-        senha_atual = st.text_input(
-            "🔑 Senha atual",
-            type="password"
-        )
-
-        nova_senha = st.text_input(
-            "🆕 Nova senha",
-            type="password"
-        )
-
-        confirmar_senha = st.text_input(
-            "🔁 Confirmar nova senha",
-            type="password"
-        )
-
-        alterar = st.form_submit_button(
-            "🔐 ALTERAR SENHA",
-            use_container_width=True
-        )
-
-        if alterar:
-
-            if senha_atual != buscar_senha():
-
-                st.error(
-                    "❌ A senha atual está incorreta."
-                )
-
-            elif not nova_senha:
-
-                st.error(
-                    "❌ Digite uma nova senha."
-                )
-
-            elif nova_senha != confirmar_senha:
-
-                st.error(
-                    "❌ As senhas não são iguais."
-                )
-
-            elif len(nova_senha) < 4:
-
-                st.error(
-                    "❌ A senha deve ter pelo menos 4 caracteres."
-                )
-
-            else:
-
-                alterar_senha(
-                    nova_senha
-                )
-
-                st.success(
-                    "✅ Senha alterada com sucesso!"
-                )
