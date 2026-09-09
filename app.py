@@ -123,7 +123,11 @@ def buscar_produtividade():
     conn.close()
 
     if not df.empty:
-        df["data"] = pd.to_datetime(df["data"])
+        df["data"] = pd.to_datetime(df["data"], errors="coerce")
+        df["sysvet_erro"] = pd.to_numeric(df["sysvet_erro"], errors="fillna").fillna(0).astype(int)
+        df["sysvet_exito"] = pd.to_numeric(df["sysvet_exito"], errors="fillna").fillna(0).astype(int)
+        df["faturado"] = pd.to_numeric(df["faturado"], errors="fillna").fillna(0).astype(int)
+        
         df["total_sysvet"] = df["sysvet_erro"] + df["sysvet_exito"]
         df["produtividade_total"] = df["sysvet_erro"] + df["sysvet_exito"] + df["faturado"]
         df["taxa_exito"] = df.apply(
@@ -564,7 +568,7 @@ elif pagina == "📝 Lançar produtividade":
 
 
 # =========================================================
-# COLABORADORES (Com Cadastro, Listagem e Exclusão)
+# COLABORADORES (Com Cadastro, Listagem, Alerta de Lançamentos e Exclusão)
 # =========================================================
 
 elif pagina == "👥 Colaboradores" and st.session_state.perfil == "admin":
@@ -600,9 +604,20 @@ elif pagina == "👥 Colaboradores" and st.session_state.perfil == "admin":
 
         st.divider()
         st.subheader("🗑️ Excluir Colaborador")
-        st.warning("⚠️ Atenção: Ao excluir um colaborador, o acesso dele também será removido. O histórico de produtividade anterior é preservado por segurança.")
+        st.warning("⚠️ Atenção: Ao excluir um colaborador, o acesso dele também será removido.")
 
         colab_para_excluir = st.selectbox("Selecione o colaborador que deseja excluir", colaboradores["nome"].tolist(), key="select_excluir_colab")
+
+        # Verificação inteligente de lançamentos pendentes
+        df_prod = buscar_produtividade()
+        lancamentos_colab = 0
+        if not df_prod.empty:
+            lancamentos_colab = len(df_prod[df_prod["colaborador"] == colab_para_excluir])
+
+        if lancamentos_colab > 0:
+            st.info(f"ℹ️ Este colaborador possui **{lancamentos_colab} registro(s)** de produtividade no histórico. O histórico será mantido com o nome dele por segurança.")
+        else:
+            st.info("ℹ️ Este colaborador não possui registros de produtividade cadastrados.")
 
         confirmar_exclusao = st.checkbox("Confirmo a exclusão deste colaborador.", key="check_excluir_colab")
 
@@ -611,10 +626,7 @@ elif pagina == "👥 Colaboradores" and st.session_state.perfil == "admin":
                 conn = conectar()
                 cursor = conn.cursor()
                 
-                # Remove o colaborador
                 cursor.execute("DELETE FROM colaboradores WHERE nome = ?", (colab_para_excluir,))
-                
-                # Remove também o acesso associado, se houver
                 cursor.execute("DELETE FROM acessos_colaboradores WHERE nome = ?", (colab_para_excluir,))
                 
                 conn.commit()
@@ -686,6 +698,15 @@ elif pagina == "📋 Histórico":
     if df.empty:
         st.info("Nenhum lançamento encontrado.")
     else:
+        # Métricas rápidas no topo do histórico
+        total_lancamentos = len(df)
+        soma_prod_hist = int(df["produtividade_total"].sum())
+        
+        m1, m2 = st.columns(2)
+        m1.metric("📦 Total de Registros", f"{total_lancamentos:,}")
+        m2.metric("📊 Soma Total da Produtividade", f"{soma_prod_hist:,}")
+        st.divider()
+
         visualizar = df[
             [
                 "id",
