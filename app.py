@@ -456,28 +456,43 @@ if pagina == "📈 Dashboard" and st.session_state.perfil == "admin":
 
     st.divider()
 
-    # Gráfico de Linha Temporal (Linha 2)
+    # Gráfico de Linha Temporal Aprimorado para Apresentação (Linha 2)
     st.subheader("📈 Evolução Diária da Produtividade")
     df_tempo = df_filtrado.groupby("data")["produtividade_total"].sum().reset_index()
     df_tempo = df_tempo.sort_values("data")
     df_tempo["data_str"] = df_tempo["data"].dt.strftime("%d/%m/%Y")
 
-    fig_line = px.line(
+    # Gráfico de Área Suave com Efeito Degradê e Destaque Visual Executivo
+    fig_line = px.area(
         df_tempo, 
         x="data_str", 
         y="produtividade_total", 
         markers=True,
         line_shape="spline"
     )
-    fig_line.update_traces(line_color="#2563eb", line_width=3, marker_size=8)
+    
+    # Estilização profissional avançada para apresentações
+    fig_line.update_traces(
+        line=dict(color="#3b82f6", width=4),
+        marker=dict(size=9, color="#1e3a8a", line=dict(color="#ffffff", width=2)),
+        fill='tozeroy',
+        fillcolor='rgba(59, 130, 246, 0.15)'
+    )
+    
     fig_line.update_layout(
-        xaxis_title="Data",
-        yaxis_title="Produtividade",
+        xaxis_title="Data do Registro",
+        yaxis_title="Total Produtividade",
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=10, r=10, t=20, b=10),
-        height=350
+        height=380,
+        hovermode="x unified"
     )
+    
+    # Grid sutil para facilitar a leitura visual em projetores/telas grandes
+    fig_line.update_xaxes(showgrid=True, gridwidth=1, gridcolor="rgba(200, 200, 200, 0.15)")
+    fig_line.update_yaxes(showgrid=True, gridwidth=1, gridcolor="rgba(200, 200, 200, 0.15)")
+
     st.plotly_chart(fig_line, use_container_width=True)
 
 
