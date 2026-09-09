@@ -57,7 +57,6 @@ def criar_banco():
         )
     """)
 
-    # Nova tabela para gerenciar acessos de colaboradores
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS acessos_colaboradores (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -66,19 +65,12 @@ def criar_banco():
         )
     """)
 
-    cursor.execute(
-        "SELECT COUNT(*) FROM configuracoes"
-    )
-
+    cursor.execute("SELECT COUNT(*) FROM configuracoes")
     quantidade = cursor.fetchone()[0]
 
     if quantidade == 0:
         cursor.execute(
-            """
-            INSERT INTO configuracoes
-            (id, senha)
-            VALUES (1, ?)
-            """,
+            "INSERT INTO configuracoes (id, senha) VALUES (1, ?)",
             ("2010",)
         )
 
@@ -96,11 +88,7 @@ criar_banco()
 def buscar_senha():
     conn = conectar()
     cursor = conn.cursor()
-    cursor.execute("""
-        SELECT senha
-        FROM configuracoes
-        WHERE id = 1
-    """)
+    cursor.execute("SELECT senha FROM configuracoes WHERE id = 1")
     resultado = cursor.fetchone()
     conn.close()
     if resultado:
@@ -110,84 +98,41 @@ def buscar_senha():
 
 def alterar_senha(nova_senha):
     conn = conectar()
-    conn.execute(
-        """
-        UPDATE configuracoes
-        SET senha = ?
-        WHERE id = 1
-        """,
-        (nova_senha,)
-    )
+    conn.execute("UPDATE configuracoes SET senha = ? WHERE id = 1", (nova_senha,))
     conn.commit()
     conn.close()
 
 
 def buscar_colaboradores():
     conn = conectar()
-    df = pd.read_sql_query(
-        """
-        SELECT *
-        FROM colaboradores
-        ORDER BY nome
-        """,
-        conn
-    )
+    df = pd.read_sql_query("SELECT * FROM colaboradores ORDER BY nome", conn)
     conn.close()
     return df
 
 
 def buscar_acessos():
     conn = conectar()
-    df = pd.read_sql_query(
-        """
-        SELECT *
-        FROM acessos_colaboradores
-        ORDER BY nome
-        """,
-        conn
-    )
+    df = pd.read_sql_query("SELECT * FROM acessos_colaboradores ORDER BY nome", conn)
     conn.close()
     return df
 
 
 def buscar_produtividade():
     conn = conectar()
-    df = pd.read_sql_query(
-        """
-        SELECT *
-        FROM produtividade
-        ORDER BY data DESC, id DESC
-        """,
-        conn
-    )
+    df = pd.read_sql_query("SELECT * FROM produtividade ORDER BY data DESC, id DESC", conn)
     conn.close()
 
     if not df.empty:
         df["data"] = pd.to_datetime(df["data"])
-        df["total_sysvet"] = (
-            df["sysvet_erro"] +
-            df["sysvet_exito"]
-        )
-        df["produtividade_total"] = (
-            df["sysvet_erro"] +
-            df["sysvet_exito"] +
-            df["faturado"]
-        )
+        df["total_sysvet"] = df["sysvet_erro"] + df["sysvet_exito"]
+        df["produtividade_total"] = df["sysvet_erro"] + df["sysvet_exito"] + df["faturado"]
         df["taxa_exito"] = df.apply(
-            lambda linha:
-            (
-                linha["sysvet_exito"] /
-                linha["total_sysvet"] *
-                100
-            )
-            if linha["total_sysvet"] > 0
-            else 0,
+            lambda linha: (linha["sysvet_exito"] / linha["total_sysvet"] * 100) if linha["total_sysvet"] > 0 else 0,
             axis=1
         )
     return df
 
 
-# Função para exportar backup completo do banco em JSON (evita perda de dados)
 def gerar_backup_json():
     conn = conectar()
     cursor = conn.cursor()
@@ -220,7 +165,6 @@ def restaurar_backup_json(json_str):
         conn = conectar()
         cursor = conn.cursor()
 
-        # Limpar tabelas atuais antes de restaurar
         cursor.execute("DELETE FROM colaboradores")
         cursor.execute("DELETE FROM produtividade")
         cursor.execute("DELETE FROM acessos_colaboradores")
@@ -292,7 +236,7 @@ else:
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
 if "perfil" not in st.session_state:
-    st.session_state.perfil = None  # "admin" ou "colaborador"
+    st.session_state.perfil = None
 if "usuario_logado" not in st.session_state:
     st.session_state.usuario_logado = None
 
@@ -362,7 +306,6 @@ if st.sidebar.button(texto_modo, use_container_width=True):
 
 st.sidebar.divider()
 
-# Definir páginas conforme o perfil do usuário
 if st.session_state.perfil == "admin":
     paginas = [
         "📈 Dashboard",
@@ -374,7 +317,6 @@ if st.session_state.perfil == "admin":
         "🔐 Alterar senha"
     ]
 else:
-    # Colaborador tem acesso apenas para lançar produtividade e ver seu histórico pessoal
     paginas = [
         "📝 Lançar produtividade",
         "📋 Histórico"
@@ -392,81 +334,151 @@ if st.sidebar.button("🚪 SAIR", use_container_width=True):
 
 
 # =========================================================
-# DASHBOARD (Somente Admin)
+# DASHBOARD REFORMULADO (Somente Admin)
 # =========================================================
 
 if pagina == "📈 Dashboard" and st.session_state.perfil == "admin":
-    st.title("📊 Dashboard")
-    st.caption("Visão geral da produtividade da equipe")
+    st.title("📈 Dashboard Executivo")
+    st.caption("Painel analítico de desempenho e métricas da equipe")
 
     df = buscar_produtividade()
 
     if df.empty:
-        st.info("Ainda não existem registros.")
+        st.info("Ainda não existem registros de produtividade para exibir no dashboard.")
         st.stop()
 
     st.divider()
-    st.subheader("🔎 Filtros")
 
-    col1, col2, col3 = st.columns(3)
-    lista_colaboradores = sorted(df["colaborador"].unique().tolist())
+    # Filtros do Dashboard
+    with st.container():
+        col_f1, col_f2, col_f3 = st.columns([2, 2, 1])
+        lista_colaboradores = sorted(df["colaborador"].unique().tolist())
 
-    with col1:
-        colaborador = st.selectbox("👤 Colaborador", ["Todos os colaboradores"] + lista_colaboradores)
+        with col_f1:
+            colaborador_filtro = st.selectbox("👤 Filtrar por Colaborador", ["Todos os colaboradores"] + lista_colaboradores)
 
-    data_min = df["data"].min().date()
-    data_max = df["data"].max().date()
+        data_min = df["data"].min().date()
+        data_max = df["data"].max().date()
 
-    with col2:
-        periodo = st.date_input("📅 Período", value=(data_min, data_max), min_value=data_min, max_value=data_max)
+        with col_f2:
+            periodo = st.date_input("📅 Intervalo de Datas", value=(data_min, data_max), min_value=data_min, max_value=data_max)
 
-    with col3:
-        st.write("")
-        if st.button("🔄 Atualizar", use_container_width=True):
-            st.rerun()
+        with col_f3:
+            st.write("")
+            st.write("")
+            if st.button("🔄 Atualizar", use_container_width=True):
+                st.rerun()
 
+    # Aplicação dos Filtros
     if isinstance(periodo, tuple) and len(periodo) == 2:
         inicio, fim = periodo
         df_filtrado = df[(df["data"].dt.date >= inicio) & (df["data"].dt.date <= fim)].copy()
     else:
         df_filtrado = df.copy()
 
-    if colaborador != "Todos os colaboradores":
-        df_filtrado = df_filtrado[df_filtrado["colaborador"] == colaborador].copy()
+    if colaborador_filtro != "Todos os colaboradores":
+        df_filtrado = df_filtrado[df_filtrado["colaborador"] == colaborador_filtro].copy()
 
     if df_filtrado.empty:
         st.warning("Não existem registros para os filtros selecionados.")
         st.stop()
 
+    # Cálculos dos KPIs
     erro = int(df_filtrado["sysvet_erro"].sum())
     exito = int(df_filtrado["sysvet_exito"].sum())
     faturado = int(df_filtrado["faturado"].sum())
     total_sysvet = erro + exito
     produtividade = erro + exito + faturado
-    taxa = (exito / total_sysvet * 100) if total_sysvet > 0 else 0
+    taxa_media = (exito / total_sysvet * 100) if total_sysvet > 0 else 0
 
-    st.subheader("📌 Indicadores")
+    st.markdown("### 📌 Indicadores Gerais")
     c1, c2, c3, c4, c5 = st.columns(5)
-    c1.metric("❌ SYSVET ERRO", f"{erro:,}")
-    c2.metric("✅ SYSVET ÊXITO", f"{exito:,}")
-    c3.metric("📁 FATURADO", f"{faturado:,}")
-    c4.metric("📊 PRODUTIVIDADE", f"{produtividade:,}")
-    c5.metric("🎯 TAXA DE ÊXITO", f"{taxa:.1f}%")
+    c1.metric("❌ SYSVET Erro", f"{erro:,}")
+    c2.metric("✅ SYSVET Êxito", f"{exito:,}")
+    c3.metric("📁 Faturado", f"{faturado:,}")
+    c4.metric("📊 Produtividade Total", f"{produtividade:,}")
+    c5.metric("🎯 Taxa de Êxito", f"{taxa_media:.1f}%")
 
     st.divider()
 
-    resumo = df_filtrado.groupby("colaborador").agg(
-        SYSVET_Erro=("sysvet_erro", "sum"),
-        SYSVET_Exito=("sysvet_exito", "sum"),
-        Faturado=("faturado", "sum"),
-        Total=("produtividade_total", "sum")
-    ).reset_index().sort_values("Total", ascending=False)
+    # Gráficos da Linha 1
+    col_g1, col_g2 = st.columns(2)
 
-    st.subheader("🏆 Ranking de produtividade")
-    grafico = px.bar(resumo, x="colaborador", y="Total", color="Total", text="Total", color_continuous_scale="Blues")
-    grafico.update_traces(textposition="outside")
-    grafico.update_layout(height=430, xaxis_title="Colaborador", yaxis_title="Produtividade", coloraxis_showscale=False, plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
-    st.plotly_chart(grafico, use_container_width=True)
+    with col_g1:
+        st.subheader("🏆 Ranking de Produtividade por Colaborador")
+        resumo_colab = df_filtrado.groupby("colaborador")["produtividade_total"].sum().reset_index()
+        resumo_colab = resumo_colab.sort_values("produtividade_total", ascending=True)
+
+        fig_bar = px.bar(
+            resumo_colab, 
+            x="produtividade_total", 
+            y="colaborador", 
+            orientation="h",
+            text="produtividade_total",
+            color="produtividade_total",
+            color_continuous_scale="Blues"
+        )
+        fig_bar.update_traces(textposition="outside")
+        fig_bar.update_layout(
+            xaxis_title="Total de Produtividade", 
+            yaxis_title="", 
+            coloraxis_showscale=False, 
+            plot_bgcolor="rgba(0,0,0,0)", 
+            paper_bgcolor="rgba(0,0,0,0)",
+            margin=dict(l=10, r=10, t=10, b=10),
+            height=380
+        )
+        st.plotly_chart(fig_bar, use_container_width=True)
+
+    with col_g2:
+        st.subheader("🍩 Distribuição Geral de Atividades")
+        df_pizza = pd.DataFrame({
+            "Categoria": ["SYSVET Erro", "SYSVET Êxito", "Faturado"],
+            "Quantidade": [erro, exito, faturado]
+        })
+        
+        fig_pie = px.pie(
+            df_pizza, 
+            names="Categoria", 
+            values="Quantidade", 
+            hole=0.5,
+            color="Categoria",
+            color_discrete_map={"SYSVET Erro": "#ef4444", "SYSVET Êxito": "#22c55e", "Faturado": "#3b82f6"}
+        )
+        fig_pie.update_layout(
+            plot_bgcolor="rgba(0,0,0,0)", 
+            paper_bgcolor="rgba(0,0,0,0)",
+            margin=dict(l=10, r=10, t=10, b=10),
+            height=380,
+            legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5)
+        )
+        st.plotly_chart(fig_pie, use_container_width=True)
+
+    st.divider()
+
+    # Gráfico de Linha Temporal (Linha 2)
+    st.subheader("📈 Evolução Diária da Produtividade")
+    df_tempo = df_filtrado.groupby("data")["produtividade_total"].sum().reset_index()
+    df_tempo = df_tempo.sort_values("data")
+    df_tempo["data_str"] = df_tempo["data"].dt.strftime("%d/%m/%Y")
+
+    fig_line = px.line(
+        df_tempo, 
+        x="data_str", 
+        y="produtividade_total", 
+        markers=True,
+        line_shape="spline"
+    )
+    fig_line.update_traces(line_color="#2563eb", line_width=3, marker_size=8)
+    fig_line.update_layout(
+        xaxis_title="Data",
+        yaxis_title="Produtividade",
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=10, r=10, t=20, b=10),
+        height=350
+    )
+    st.plotly_chart(fig_line, use_container_width=True)
 
 
 # =========================================================
@@ -485,7 +497,6 @@ elif pagina == "📝 Lançar produtividade":
         with st.form("form_produtividade"):
             data_lancamento = st.date_input("📅 Data", value=date.today())
 
-            # Se for admin, pode escolher o colaborador. Se for colaborador logado, trava no nome dele.
             if st.session_state.perfil == "admin":
                 colaborador = st.selectbox("👤 Colaborador", colaboradores["nome"].tolist())
             else:
@@ -596,7 +607,6 @@ elif pagina == "🔑 Gerenciar Acessos" and st.session_state.perfil == "admin":
     if df_acessos.empty:
         st.info("Nenhum acesso configurado.")
     else:
-        # Ocultar as senhas na exibição por segurança básica
         df_exibicao = df_acessos.copy()
         df_exibicao["senha"] = "••••••"
         st.dataframe(df_exibicao[["id", "nome", "senha"]], use_container_width=True, hide_index=True)
@@ -611,7 +621,6 @@ elif pagina == "📋 Histórico":
 
     df = buscar_produtividade()
 
-    # Se for colaborador comum, filtra apenas os lançamentos dele
     if st.session_state.perfil == "colaborador":
         df = df[df["colaborador"] == st.session_state.usuario_logado]
 
@@ -643,7 +652,6 @@ elif pagina == "📋 Histórico":
 
         st.dataframe(visualizar, use_container_width=True, hide_index=True)
 
-        # Exclusão permitida apenas para o Administrador
         if st.session_state.perfil == "admin":
             st.divider()
             st.subheader("🗑️ Excluir registros de uma data")
