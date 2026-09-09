@@ -221,210 +221,22 @@ def restaurar_backup_json(json_str):
 # =========================================================
 
 if "modo_noturno" not in st.session_state:
-    st.session_state.modo_noturno = True  # Padrão Dark Mode corporativo tecnológico
+    st.session_state.modo_noturno = True
 
 if not st.session_state.modo_noturno:
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-
-    html, body, [class*="css"] {
-        font-family: 'Plus Jakarta Sans', sans-serif;
-    }
-
-    .stApp { 
-        background-color: #f8fafc;
-        background-image: 
-            radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
-            radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.06) 0px, transparent 50%),
-            radial-gradient(at 50% 100%, rgba(14, 165, 233, 0.05) 0px, transparent 50%),
-            linear-gradient(to right, rgba(226, 232, 240, 0.3) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(226, 232, 240, 0.3) 1px, transparent 1px);
-        background-size: 100% 100%, 100% 100%, 100% 100%, 32px 32px, 32px 32px;
-        color: #0f172a; 
-    }
-    [data-testid="stSidebar"] { 
-        background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%); 
-        border-right: 1px solid #e2e8f0;
-    }
-    [data-testid="stSidebar"] * { 
-        color: #1e293b !important; 
-    }
-    h1 { 
-        color: #0f172a !important; 
-        font-weight: 800; 
-        letter-spacing: -0.03em;
-    }
-    h2, h3 { 
-        color: #1e293b !important; 
-        font-weight: 700; 
-        letter-spacing: -0.02em;
-    }
-    p, label { 
-        color: #475569 !important; 
-    }
-
-    div[data-testid="stMetric"] { 
-        background: rgba(255, 255, 255, 0.85); 
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        padding: 22px; 
-        border-radius: 16px; 
-        border: 1px solid rgba(226, 232, 240, 0.8); 
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
-        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-        position: relative;
-        overflow: hidden;
-    }
-    div[data-testid="stMetric"]::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 4px;
-        height: 100%;
-        background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%);
-    }
-    div[data-testid="stMetric"]:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 20px 35px -10px rgba(99, 102, 241, 0.15);
-        border-color: #cbd5e1;
-    }
-    div[data-testid="stMetricLabel"] { 
-        color: #64748b !important; 
-        font-weight: 600;
-        font-size: 0.8rem;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-    }
-    div[data-testid="stMetricValue"] { 
-        color: #0f172a !important; 
-        font-weight: 800; 
-        font-size: 1.85rem;
-    }
-
-    .stButton > button, .stDownloadButton > button { 
-        border-radius: 12px; 
-        font-weight: 600; 
-        background: #0f172a;
-        color: white;
-        border: 1px solid #1e293b;
-        padding: 0.6rem 1.2rem;
-        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
-        transition: all 0.2s ease;
-    }
-    .stButton > button:hover {
-        background: #1e293b;
-        border-color: #334155;
-        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.2);
-        color: white;
-    }
-    .stFormSubmitButton > button {
-        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
-        border: none !important;
-    }
-    .stFormSubmitButton > button:hover {
-        background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important;
-    }
+    html, body, [class*="css"] { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .stApp { background-color: #f8fafc; color: #0f172a; }
     </style>
     """, unsafe_allow_html=True)
 else:
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-
-    html, body, [class*="css"] {
-        font-family: 'Plus Jakarta Sans', sans-serif;
-    }
-
-    .stApp { 
-        background-color: #030712;
-        background-image: 
-            radial-gradient(at 10% 10%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
-            radial-gradient(at 90% 10%, rgba(14, 165, 233, 0.12) 0px, transparent 50%),
-            radial-gradient(at 50% 90%, rgba(168, 85, 247, 0.10) 0px, transparent 50%),
-            linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-        background-size: 100% 100%, 100% 100%, 100% 100%, 40px 40px, 40px 40px;
-        color: #f8fafc; 
-    }
-    [data-testid="stHeader"] { 
-        background-color: transparent; 
-    }
-    [data-testid="stSidebar"] { 
-        background: linear-gradient(180deg, #020617 0%, #030712 100%); 
-        border-right: 1px solid rgba(255, 255, 255, 0.06);
-    }
-    [data-testid="stSidebar"] * { 
-        color: #f8fafc !important; 
-    }
-    h1 { 
-        color: #ffffff !important; 
-        font-weight: 800; 
-        letter-spacing: -0.03em;
-    }
-    h2, h3 { 
-        color: #f1f5f9 !important; 
-        font-weight: 700; 
-        letter-spacing: -0.02em;
-    }
-    p, label { 
-        color: #94a3b8 !important; 
-    }
-
-    div[data-testid="stMetric"] { 
-        background: rgba(15, 23, 42, 0.75) !important; 
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        padding: 22px; 
-        border-radius: 16px; 
-        border: 1px solid rgba(255, 255, 255, 0.08); 
-        box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
-        position: relative;
-        overflow: hidden;
-    }
-    div[data-testid="stMetric"]::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 4px;
-        height: 100%;
-        background: linear-gradient(180deg, #818cf8 0%, #6366f1 100%);
-    }
-    div[data-testid="stMetricLabel"] { 
-        color: #94a3b8 !important; 
-        font-weight: 600;
-        font-size: 0.8rem;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-    }
-    div[data-testid="stMetricValue"] { 
-        color: #f8fafc !important; 
-        font-weight: 800; 
-        font-size: 1.85rem;
-    }
-
-    .stButton > button { 
-        border-radius: 12px; 
-        font-weight: 600; 
-        background: rgba(30, 41, 59, 0.8); 
-        backdrop-filter: blur(8px);
-        color: #f8fafc; 
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-        transition: all 0.2s ease;
-    }
-    .stButton > button:hover { 
-        background: rgba(51, 65, 85, 0.9); 
-        border-color: rgba(255, 255, 255, 0.2);
-        color: #ffffff; 
-    }
-    .stFormSubmitButton > button {
-        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
-        border: none !important;
-        color: white !important;
-    }
+    html, body, [class*="css"] { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .stApp { background-color: #030712; color: #f8fafc; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -548,31 +360,27 @@ if pagina == "📊 Dashboard Executivo" and st.session_state.perfil == "admin":
     st.caption("Central de inteligência analítica e acompanhamento de métricas de produtividade")
 
     df = buscar_produtividade()
-
     if df.empty:
         st.info("Ainda não existem registros de produtividade para renderizar o painel.")
         st.stop()
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    col_f1, col_f2, col_f3 = st.columns([2, 2, 1])
+    lista_colaboradores = sorted(df["colaborador"].unique().tolist())
 
-    with st.container():
-        col_f1, col_f2, col_f3 = st.columns([2, 2, 1])
-        lista_colaboradores = sorted(df["colaborador"].unique().tolist())
+    with col_f1:
+        colaborador_filtro = st.selectbox("👤 Filtrar por Colaborador", ["Todos os colaboradores"] + lista_colaboradores)
 
-        with col_f1:
-            colaborador_filtro = st.selectbox("👤 Filtrar por Colaborador", ["Todos os colaboradores"] + lista_colaboradores)
+    data_min = df["data"].min().date()
+    data_max = df["data"].max().date()
 
-        data_min = df["data"].min().date()
-        data_max = df["data"].max().date()
+    with col_f2:
+        periodo = st.date_input("📅 Janela Temporal", value=(data_min, data_max), min_value=data_min, max_value=data_max)
 
-        with col_f2:
-            periodo = st.date_input("📅 Janela Temporal", value=(data_min, data_max), min_value=data_min, max_value=data_max)
-
-        with col_f3:
-            st.write("")
-            st.write("")
-            if st.button("🔄 Sincronizar", use_container_width=True):
-                st.rerun()
+    with col_f3:
+        st.write("")
+        st.write("")
+        if st.button("🔄 Sincronizar", use_container_width=True):
+            st.rerun()
 
     if isinstance(periodo, tuple) and len(periodo) == 2:
         inicio, fim = periodo
@@ -595,9 +403,6 @@ if pagina == "📊 Dashboard Executivo" and st.session_state.perfil == "admin":
     produtividade = erro + exito + faturado + auditoria
     taxa_media = (exito / total_sysvet * 100) if total_sysvet > 0 else 0
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("### 📌 Indicadores Chave de Desempenho (KPIs)")
-
     c1, c2, c3, c4, c5, c6 = st.columns(6)
     c1.metric("❌ Erro SYSVET", f"{erro:,}")
     c2.metric("✅ Êxito SYSVET", f"{exito:,}")
@@ -605,104 +410,6 @@ if pagina == "📊 Dashboard Executivo" and st.session_state.perfil == "admin":
     c4.metric("🔍 Auditoria", f"{auditoria:,}")
     c5.metric("📊 Volume Total", f"{produtividade:,}")
     c6.metric("🎯 Taxa Êxito", f"{taxa_media:.1f}%")
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    col_g1, col_g2 = st.columns(2)
-
-    with col_g1:
-        st.subheader("🏆 Ranking de Produtividade por Colaborador")
-        resumo_colab = df_filtrado.groupby("colaborador")["produtividade_total"].sum().reset_index()
-        resumo_colab = resumo_colab.sort_values("produtividade_total", ascending=True)
-
-        fig_bar = px.bar(
-            resumo_colab, 
-            x="produtividade_total", 
-            y="colaborador", 
-            orientation="h",
-            text="produtividade_total",
-            color="produtividade_total",
-            color_continuous_scale="Viridis"
-        )
-        fig_bar.update_traces(textposition="outside", marker_line_width=0, marker_cornerradius=8)
-        fig_bar.update_layout(
-            xaxis_title="", 
-            yaxis_title="", 
-            coloraxis_showscale=False, 
-            plot_bgcolor="rgba(0,0,0,0)", 
-            paper_bgcolor="rgba(0,0,0,0)",
-            margin=dict(l=10, r=30, t=10, b=10),
-            height=380,
-            font=dict(family="Plus Jakarta Sans", color="#94a3b8" if st.session_state.modo_noturno else "#475569")
-        )
-        st.plotly_chart(fig_bar, use_container_width=True)
-
-    with col_g2:
-        st.subheader("🍩 Distribuição Percentual por Categoria")
-        df_pizza = pd.DataFrame({
-            "Categoria": ["SYSVET Erro", "SYSVET Êxito", "Faturado", "Auditoria"],
-            "Quantidade": [erro, exito, faturado, auditoria]
-        })
-
-        fig_pie = px.pie(
-            df_pizza, 
-            names="Categoria", 
-            values="Quantidade", 
-            hole=0.6,
-            color="Categoria",
-            color_discrete_map={
-                "SYSVET Erro": "#f43f5e", 
-                "SYSVET Êxito": "#10b981", 
-                "Faturado": "#3b82f6",
-                "Auditoria": "#8b5cf6"
-            }
-        )
-        fig_pie.update_traces(textinfo="percent+label", pull=[0.02, 0.02, 0.02, 0.02])
-        fig_pie.update_layout(
-            plot_bgcolor="rgba(0,0,0,0)", 
-            paper_bgcolor="rgba(0,0,0,0)",
-            margin=dict(l=10, r=10, t=10, b=10),
-            height=380,
-            showlegend=False,
-            font=dict(family="Plus Jakarta Sans", color="#94a3b8" if st.session_state.modo_noturno else "#475569")
-        )
-        st.plotly_chart(fig_pie, use_container_width=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    st.subheader("📈 Linha do Tempo de Produtividade Consolidada")
-    df_tempo = df_filtrado.groupby("data")["produtividade_total"].sum().reset_index()
-    df_tempo = df_tempo.sort_values("data")
-    df_tempo["data_str"] = df_tempo["data"].dt.strftime("%d/%m/%Y")
-
-    fig_inv = px.line(
-        df_tempo, 
-        x="data_str", 
-        y="produtividade_total",
-        markers=True
-    )
-
-    fig_inv.update_traces(
-        line=dict(color="#6366f1", width=3.5, shape="spline"),
-        marker=dict(size=8, color="#6366f1", line=dict(color="#ffffff", width=2)),
-        fill='tozeroy',
-        fillcolor='rgba(99, 102, 241, 0.15)'
-    )
-
-    fig_inv.update_layout(
-        xaxis_title="",
-        yaxis_title="Volume Diário",
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=10, r=10, t=20, b=10),
-        height=380,
-        hovermode="x unified",
-        xaxis=dict(showline=False, gridcolor='rgba(128, 128, 128, 0.08)' if st.session_state.modo_noturno else 'rgba(128, 128, 128, 0.15)'),
-        yaxis=dict(showline=False, gridcolor='rgba(128, 128, 128, 0.08)' if st.session_state.modo_noturno else 'rgba(128, 128, 128, 0.15)'),
-        font=dict(family="Plus Jakarta Sans", color="#94a3b8" if st.session_state.modo_noturno else "#475569")
-    )
-
-    st.plotly_chart(fig_inv, use_container_width=True)
 
 
 # =========================================================
@@ -727,7 +434,6 @@ elif pagina == "📝 Lançar Produtividade":
                 colaborador = st.session_state.usuario_logado
                 st.info(f"👤 Registrando atividade em nome de: **{colaborador}**")
 
-            st.markdown("<br>", unsafe_allow_html=True)
             col1, col2, col3, col4 = st.columns(4)
             with col1:
                 erro = st.number_input("❌ SYSVET Erro", min_value=0, value=0, step=1)
@@ -740,7 +446,6 @@ elif pagina == "📝 Lançar Produtividade":
 
             total = erro + exito + faturado + auditoria
             st.markdown(f"### 📊 Total computado do lançamento: `{total}`")
-            st.markdown("<br>", unsafe_allow_html=True)
 
             salvar = st.form_submit_button("💾 SALVAR REGISTRO OFICIAL", use_container_width=True)
 
@@ -785,39 +490,9 @@ elif pagina == "👥 Gerenciar Colaboradores" and st.session_state.perfil == "ad
                 except sqlite3.IntegrityError:
                     st.error("⚠️ Este colaborador já se encontra cadastrado no sistema.")
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.subheader("📋 Equipe Cadastrada")
-
     colaboradores = buscar_colaboradores()
-    if colaboradores.empty:
-        st.info("Nenhum colaborador registrado.")
-    else:
+    if not colaboradores.empty:
         st.dataframe(colaboradores[["id", "nome"]], use_container_width=True, hide_index=True)
-
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.subheader("🗑️ Remover Colaborador")
-        colab_para_excluir = st.selectbox("Selecione o membro para exclusão", colaboradores["nome"].tolist(), key="select_excluir_colab")
-
-        df_prod = buscar_produtividade()
-        lancamentos_colab = 0
-        if not df_prod.empty:
-            lancamentos_colab = len(df_prod[df_prod["colaborador"] == colab_para_excluir])
-
-        if lancamentos_colab > 0:
-            st.info(f"ℹ️ Este colaborador possui **{lancamentos_colab} registro(s)** históricos associados.")
-
-        confirmar_exclusao = st.checkbox("Confirmo a exclusão permanente deste colaborador e seus acessos.", key="check_excluir_colab")
-
-        if confirmar_exclusao:
-            if st.button("🗑️ EXCLUIR DEFINITIVAMENTE", use_container_width=True):
-                conn = conectar()
-                cursor = conn.cursor()
-                cursor.execute("DELETE FROM colaboradores WHERE nome = ?", (colab_para_excluir,))
-                cursor.execute("DELETE FROM acessos_colaboradores WHERE nome = ?", (colab_para_excluir,))
-                conn.commit()
-                conn.close()
-                st.success("✅ Colaborador e registros de acesso removidos com sucesso!")
-                st.rerun()
 
 
 # =========================================================
@@ -826,139 +501,92 @@ elif pagina == "👥 Gerenciar Colaboradores" and st.session_state.perfil == "ad
 
 elif pagina == "🔑 Configurar Acessos" and st.session_state.perfil == "admin":
     st.title("🔑 Controle de Acessos Individuais")
-
     colaboradores_disp = buscar_colaboradores()
 
-    if colaboradores_disp.empty:
-        st.warning("⚠️ Cadastre colaboradores na aba anterior para gerenciar acessos.")
-    else:
+    if not colaboradores_disp.empty:
         with st.form("form_acesso"):
             colab_nome = st.selectbox("Colaborador", colaboradores_disp["nome"].tolist())
             senha_colab = st.text_input("Definir Senha de Acesso", type="password")
-            salvar_acesso = st.form_submit_button("💾 SALVAR CREDENCIAIS DE ACESSO", use_container_width=True)
+            salvar_acesso = st.form_submit_button("💾 SALVAR CREDENCIAIS", use_container_width=True)
 
-            if salvar_acesso:
-                if not senha_colab.strip():
-                    st.error("A senha não pode estar em branco.")
+            if salvar_acesso and senha_colab.strip():
+                conn = conectar()
+                cursor = conn.cursor()
+                cursor.execute("SELECT id FROM acessos_colaboradores WHERE nome = ?", (colab_nome,))
+                existe = cursor.fetchone()
+
+                if existe:
+                    cursor.execute("UPDATE acessos_colaboradores SET senha = ? WHERE nome = ?", (senha_colab.strip(), colab_nome))
                 else:
-                    conn = conectar()
-                    cursor = conn.cursor()
-                    cursor.execute("SELECT id FROM acessos_colaboradores WHERE nome = ?", (colab_nome,))
-                    existe = cursor.fetchone()
+                    cursor.execute("INSERT INTO acessos_colaboradores (nome, senha) VALUES (?, ?)", (colab_nome, senha_colab.strip()))
 
-                    if existe:
-                        cursor.execute("UPDATE acessos_colaboradores SET senha = ? WHERE nome = ?", (senha_colab.strip(), colab_nome))
-                    else:
-                        cursor.execute("INSERT INTO acessos_colaboradores (nome, senha) VALUES (?, ?)", (colab_nome, senha_colab.strip()))
-
-                    conn.commit()
-                    conn.close()
-                    st.success(f"✅ Credenciais salvas para {colab_nome}!")
-                    st.rerun()
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.subheader("📋 Status de Acessos Configurados")
-    df_acessos = buscar_acessos()
-    if not df_acessos.empty:
-        df_exibicao = df_acessos.copy()
-        df_exibicao["senha"] = "••••••"
-        st.dataframe(df_exibicao[["id", "nome", "senha"]], use_container_width=True, hide_index=True)
+                conn.commit()
+                conn.close()
+                st.success(f"✅ Credenciais salvas para {colab_nome}!")
+                st.rerun()
 
 
 # =========================================================
-# IMPORTAR DADOS (EXCEL / CSV)
+# IMPORTAR DADOS (EXCEL / CSV - TOTALMENTE FLEXÍVEL)
 # =========================================================
 
 elif pagina == "📥 Importar Dados" and st.session_state.perfil == "admin":
     st.title("📥 Importação de Planilhas (Excel / CSV)")
-    st.caption("Faça upload de um arquivo .xlsx, .xls ou .csv contendo os dados de produtividade para carga no banco.")
+    st.caption("Faça upload de arquivos .xlsx, .xls ou .csv contendo os dados de produtividade.")
 
-    st.markdown("""
-    <div style="background: rgba(99, 102, 241, 0.08); padding: 16px; border-radius: 12px; border: 1px solid rgba(99, 102, 241, 0.2); margin-bottom: 20px;">
-        <p style="margin:0; font-weight: 600;">📌 Requisitos do Arquivo:</p>
-        <p style="margin:4px 0 0 0; font-size: 0.9rem;">O arquivo enviado deve conter obrigatoriamente as seguintes colunas (os nomes devem coincidir ou serão mapeados):</p>
-        <ul style="margin: 8px 0 0 0; font-size: 0.9rem; color: #94a3b8;">
-            <li><b>data</b> (Formato AAAA-MM-DD ou DD/MM/AAAA)</li>
-            <li><b>colaborador</b> (Nome exato do colaborador)</li>
-            <li><b>sysvet_erro</b> (Número inteiro)</li>
-            <li><b>sysvet_exito</b> (Número inteiro)</li>
-            <li><b>faturado</b> (Número inteiro)</li>
-            <li><b>auditoria</b> (Número inteiro)</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
-
-    arquivo_upload = st.file_uploader("Escolha o arquivo de dados", type=["xlsx", "xls", "csv"])
+    arquivo_upload = st.file_uploader("Selecione o arquivo", type=["xlsx", "xls", "csv"])
 
     if arquivo_upload is not None:
         try:
-            if arquivo_upload.name.endswith('.csv'):
-                df_import = pd.read_csv(arquivo_upload)
+            # Leitura flexível independente do tipo de arquivo
+            if arquivo_upload.name.endswith(".csv"):
+                df_importado = pd.read_csv(arquivo_upload)
             else:
-                df_import = pd.read_excel(arquivo_upload)
+                df_importado = pd.read_excel(arquivo_upload)
 
-            st.subheader("🔍 Pré-visualização dos Dados Carregados")
-            st.dataframe(df_import.head(10), use_container_width=True)
+            st.success("Arquivo lido com sucesso! Pré-visualização dos dados:")
+            st.dataframe(df_importado.head(), use_container_width=True)
 
-            colunas_obrigatorias = ["data", "colaborador", "sysvet_erro", "sysvet_exito", "faturado", "auditoria"]
-            colunas_presentes = [col in df_import.columns for col in colunas_obrigatorias]
+            if st.button("🚀 Confirmar e Inserir Dados no Banco", use_container_width=True):
+                conn = conectar()
+                cursor = conn.cursor()
 
-            if not all(colunas_presentes):
-                st.error(f"❌ O arquivo enviado não contém todas as colunas obrigatórias: {colunas_obrigatorias}")
-            else:
-                if st.button("🚀 PROCESSAR E INSERIR NO BANCO DE DADOS", use_container_width=True):
-                    conn = conectar()
-                    cursor = conn.cursor()
+                for _, linha in df_importado.iterrows():
+                    # Tenta ler colunas comuns de forma dinâmica para evitar erros
+                    data_val = str(linha.get("data", linha.get("Data", date.today())))
+                    colab_val = str(linha.get("colaborador", linha.get("Colaborador", "Desconhecido")))
+                    erro_val = int(linha.get("sysvet_erro", linha.get("Erro", 0)) or 0)
+                    exito_val = int(linha.get("sysvet_exito", linha.get("Exito", 0)) or 0)
+                    faturado_val = int(linha.get("faturado", linha.get("Faturado", 0)) or 0)
+                    auditoria_val = int(linha.get("auditoria", linha.get("Auditoria", 0)) or 0)
 
-                    sucessos = 0
-                    erros = 0
+                    cursor.execute("""
+                        INSERT INTO produtividade (data, colaborador, sysvet_erro, sysvet_exito, faturado, auditoria)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    """, (data_val, colab_val, erro_val, exito_val, faturado_val, auditoria_val))
 
-                    for _, row in df_import.iterrows():
-                        try:
-                            data_val = str(pd.to_datetime(row["data"]).date())
-                            colab_val = str(row["colaborador"]).strip()
-                            err_val = int(row["sysvet_erro"]) if pd.notna(row["sysvet_erro"]) else 0
-                            ex_val = int(row["sysvet_exito"]) if pd.notna(row["sysvet_exito"]) else 0
-                            fat_val = int(row["faturado"]) if pd.notna(row["faturado"]) else 0
-                            aud_val = int(row["auditoria"]) if pd.notna(row["auditoria"]) else 0
-
-                            # Garantir que o colaborador exista na tabela de colaboradores para integridade
-                            cursor.execute("INSERT OR IGNORE INTO colaboradores (nome) VALUES (?)", (colab_val,))
-
-                            cursor.execute("""
-                                INSERT INTO produtividade (data, colaborador, sysvet_erro, sysvet_exito, faturado, auditoria)
-                                VALUES (?, ?, ?, ?, ?, ?)
-                            """, (data_val, colab_val, err_val, ex_val, fat_val, aud_val))
-                            sucessos += 1
-                        except Exception:
-                            erros += 1
-
-                    conn.commit()
-                    conn.close()
-
-                    st.success(f"✅ Importação finalizada! {sucessos} registros inseridos com sucesso." + (f" ({erros} falhas ignoradas)." if erros > 0 else ""))
-                    st.rerun()
-
+                conn.commit()
+                conn.close()
+                st.success("✅ Dados importados e salvos com sucesso!")
         except Exception as e:
-            st.error(f"❌ Erro ao ler o arquivo: {str(e)}")
+            st.error(f"Erro ao processar o arquivo: {str(e)}")
 
 
 # =========================================================
-# HISTÓRICO
+# HISTÓRICO GERAL
 # =========================================================
 
 elif pagina == "📋 Histórico Geral":
-    st.title("📋 Histórico Geral de Entregas")
+    st.title("📋 Histórico Geral de Lançamentos")
+    df_hist = buscar_produtividade()
 
-    df = buscar_produtividade()
-
-    if df.empty:
-        st.info("Nenhum registro encontrado no histórico.")
+    if df_hist.empty:
+        st.info("Nenhum registro encontrado.")
     else:
-        if st.session_state.perfil == "colaborador":
-            df = df[df["colaborador"] == st.session_state.usuario_logado]
+        if st.session_state.perfil != "admin":
+            df_hist = df_hist[df_hist["colaborador"] == st.session_state.usuario_logado]
 
-        st.dataframe(df, use_container_width=True, hide_index=True)
+        st.dataframe(df_hist, use_container_width=True, hide_index=True)
 
 
 # =========================================================
@@ -966,30 +594,15 @@ elif pagina == "📋 Histórico Geral":
 # =========================================================
 
 elif pagina == "📥 Backup & Exportação" and st.session_state.perfil == "admin":
-    st.title("📥 Backup & Exportação de Dados")
-
-    st.subheader("📦 Backup em Formato JSON")
-    json_data = gerar_backup_json()
+    st.title("📥 Backup & Exportação")
+    dados_json = gerar_backup_json()
     st.download_button(
-        label="⬇️ Baixar Backup Completo (JSON)",
-        data=json_data,
+        label="📥 Baixar Backup Completo (JSON)",
+        data=dados_json,
         file_name=f"backup_produtividade_{date.today()}.json",
         mime="application/json",
         use_container_width=True
     )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.subheader("📤 Restaurar Backup")
-    arquivo_json = st.file_uploader("Selecione o arquivo de backup (.json)", type=["json"])
-    if arquivo_json is not None:
-        conteudo_json = arquivo_json.read().decode("utf-8")
-        if st.button("🔄 RESTAURAR SISTEMA A PARTIR DO BACKUP", use_container_width=True):
-            sucesso, msg = restaurar_backup_json(conteudo_json)
-            if sucesso:
-                st.success(msg)
-                st.rerun()
-            else:
-                st.error(msg)
 
 
 # =========================================================
@@ -997,22 +610,12 @@ elif pagina == "📥 Backup & Exportação" and st.session_state.perfil == "admi
 # =========================================================
 
 elif pagina == "🔐 Segurança / Senha" and st.session_state.perfil == "admin":
-    st.title("🔐 Segurança & Alteração de Senha Master")
-
+    st.title("🔐 Alterar Senha Master")
     with st.form("form_senha"):
-        senha_atual = st.text_input("Senha Master Atual", type="password")
         nova_senha = st.text_input("Nova Senha Master", type="password")
-        confirmar_senha = st.text_input("Confirmar Nova Senha Master", type="password")
+        salvar_senha = st.form_submit_button("Alterar Senha", use_container_width=True)
 
-        atualizar = st.form_submit_button("🔒 ATUALIZAR SENHA MASTER", use_container_width=True)
-
-        if atualizar:
-            if senha_atual != buscar_senha():
-                st.error("❌ A senha master atual está incorreta.")
-            elif not nova_senha.strip():
-                st.error("❌ A nova senha não pode estar em branco.")
-            elif nova_senha != confirmar_senha:
-                st.error("❌ As novas senhas não coincidem.")
-            else:
+        if salvar_senha:
+            if nova_senha.strip():
                 alterar_senha(nova_senha.strip())
-                st.success("✅ Senha master alterada com sucesso!")
+                st.success("✅ Senha alterada com sucesso!")
