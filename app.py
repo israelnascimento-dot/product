@@ -21,7 +21,7 @@ DB = "produtividade.db"
 
 
 # =========================================================
-# BANCO DE DADOS (CRIAÇÃO DO ZERO)
+# BANCO DE DADOS (CRIAÇÃO DO ZERO / MIGRAÇÃO AUTOMÁTICA)
 # =========================================================
 
 def conectar():
@@ -46,7 +46,8 @@ def criar_banco():
             colaborador TEXT NOT NULL,
             sysvet_erro INTEGER DEFAULT 0,
             sysvet_exito INTEGER DEFAULT 0,
-            faturado INTEGER DEFAULT 0
+            faturado INTEGER DEFAULT 0,
+            auditoria INTEGER DEFAULT 0
         )
     """)
 
@@ -64,6 +65,12 @@ def criar_banco():
             senha TEXT NOT NULL
         )
     """)
+
+    # Migração automática caso a tabela antiga não tenha a coluna 'auditoria'
+    try:
+        cursor.execute("ALTER TABLE produtividade ADD COLUMN auditoria INTEGER DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass  # A coluna já existe
 
     cursor.execute("SELECT COUNT(*) FROM configuracoes")
     quantidade = cursor.fetchone()[0]
@@ -128,8 +135,16 @@ def buscar_produtividade():
         df["sysvet_exito"] = pd.to_numeric(df["sysvet_exito"], errors="coerce").fillna(0).astype(int)
         df["faturado"] = pd.to_numeric(df["faturado"], errors="coerce").fillna(0).astype(int)
         
+        # Garante compatibilidade se a base antiga vier sem a coluna
+        if "auditoria" not in df.columns:
+            df["auditoria"] = 0
+        else:
+            df["auditoria"] = pd.to_numeric(df["auditoria"], errors="coerce").fillna(0).astype(int)
+        
         df["total_sysvet"] = df["sysvet_erro"] + df["sysvet_exito"]
-        df["produtividade_total"] = df["sysvet_erro"] + df["sysvet_exito"] + df["faturado"]
+        # Produtividade total agora soma também a Auditoria de Cadastros
+        df["produtividade_total"] = df["sysvet_erro"] + df["sysvet_exito"] + df["faturado"] + df["auditoria"]
+        
         df["taxa_exito"] = df.apply(
             lambda linha: (linha["sysvet_exito"] / linha["total_sysvet"] * 100) if linha["total_sysvet"] > 0 else 0,
             axis=1
@@ -177,10 +192,23 @@ def restaurar_backup_json(json_str):
             cursor.execute("INSERT INTO colaboradores (id, nome) VALUES (?, ?)", (item.get("id"), item.get("nome")))
 
         for item in dados.get("produtividade", []):
+            # Compatibilidade de backup antigo sem a coluna auditoria
+            auditoria_val = item.get("auditoria", 0)
+            if auditoria_val is None:
+                auditoria_val = 0
+
             cursor.execute("""
-                INSERT INTO produtividade (id, data, colaborador, sysvet_erro, sysvet_exito, faturado)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (item.get("id"), item.get("data"), item.get("colaborador"), item.get("sysvet_erro"), item.get("sysvet_exito"), item.get("faturado")))
+                INSERT INTO produtividade (id, data, colaborador, sysvet_erro, sysvet_exito, faturado, auditoria)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (
+                item.get("id"), 
+                item.get("data"), 
+                item.get("colaborador"), 
+                item.get("sysvet_erro"), 
+                item.get("sysvet_exito"), 
+                item.get("faturado"),
+                auditoria_val
+            ))
 
         for item in dados.get("acessos_colaboradores", []):
             cursor.execute("INSERT INTO acessos_colaboradores (id, nome, senha) VALUES (?, ?, ?)", (item.get("id"), item.get("nome"), item.get("senha")))
@@ -391,17 +419,19 @@ if pagina == "📈 Dashboard" and st.session_state.perfil == "admin":
     erro = int(df_filtrado["sysvet_erro"].sum())
     exito = int(df_filtrado["sysvet_exito"].sum())
     faturado = int(df_filtrado["faturado"].sum())
+    auditoria = int(df_filtrado["auditoria"].sum())
     total_sysvet = erro + exito
-    produtividade = erro + exito + faturado
+    produtividade = erro + exito + faturado + auditoria
     taxa_media = (exito / total_sysvet * 100) if total_sysvet > 0 else 0
 
     st.markdown("### 📌 Indicadores Gerais")
-    c1, c2, c3, c4, c5 = st.columns(5)
+    c1, c2, c3, c4, c5, c6 = st.columns(6)
     c1.metric("❌ SYSVET Erro", f"{erro:,}")
     c2.metric("✅ SYSVET Êxito", f"{exito:,}")
     c3.metric("📁 Faturado", f"{faturado:,}")
-    c4.metric("📊 Produtividade Total", f"{produtividade:,}")
-    c5.metric("🎯 Taxa de Êxito", f"{taxa_media:.1f}%")
+    c4.metric("🔍 Auditoria", f"{auditoria:,}")
+    c5.metric("📊 Produtividade Total", f"{produtividade:,}")
+    c6.metric("🎯 Taxa de Êxito", f"{taxa_media:.1f}%")
 
     st.divider()
 
@@ -437,8 +467,8 @@ if pagina == "📈 Dashboard" and st.session_state.perfil == "admin":
     with col_g2:
         st.subheader("🍩 Distribuição Geral de Atividades")
         df_pizza = pd.DataFrame({
-            "Categoria": ["SYSVET Erro", "SYSVET Êxito", "Faturado"],
-            "Quantidade": [erro, exito, faturado]
+            "Categoria": ["SYSVET Erro", "SYSVET Êxito", "Faturado", "Auditoria de Cadastros"],
+            "Quantidade": [erro, exito, faturado, auditoria]
         })
         
         fig_pie = px.pie(
@@ -447,7 +477,12 @@ if pagina == "📈 Dashboard" and st.session_state.perfil == "admin":
             values="Quantidade", 
             hole=0.5,
             color="Categoria",
-            color_discrete_map={"SYSVET Erro": "#ef4444", "SYSVET Êxito": "#22c55e", "Faturado": "#3b82f6"}
+            color_discrete_map={
+                "SYSVET Erro": "#ef4444", 
+                "SYSVET Êxito": "#22c55e", 
+                "Faturado": "#3b82f6",
+                "Auditoria de Cadastros": "#a855f7"
+            }
         )
         fig_pie.update_layout(
             plot_bgcolor="rgba(0,0,0,0)", 
@@ -539,15 +574,17 @@ elif pagina == "📝 Lançar produtividade":
                 colaborador = st.session_state.usuario_logado
                 st.info(f"👤 Lançando em nome de: **{colaborador}**")
 
-            col1, col2, col3 = st.columns(3)
+            col1, col2, col3, col4 = st.columns(4)
             with col1:
                 erro = st.number_input("❌ SYSVET com erro", min_value=0, value=0, step=1)
             with col2:
                 exito = st.number_input("✅ SYSVET com êxito", min_value=0, value=0, step=1)
             with col3:
                 faturado = st.number_input("📁 Faturado", min_value=0, value=0, step=1)
+            with col4:
+                auditoria = st.number_input("🔍 Auditoria cadastros", min_value=0, value=0, step=1)
 
-            total = erro + exito + faturado
+            total = erro + exito + faturado + auditoria
             st.info(f"📊 Produtividade total: {total}")
 
             salvar = st.form_submit_button("💾 SALVAR PRODUTIVIDADE", use_container_width=True)
@@ -556,10 +593,10 @@ elif pagina == "📝 Lançar produtividade":
                 conn = conectar()
                 conn.execute(
                     """
-                    INSERT INTO produtividade (data, colaborador, sysvet_erro, sysvet_exito, faturado)
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO produtividade (data, colaborador, sysvet_erro, sysvet_exito, faturado, auditoria)
+                    VALUES (?, ?, ?, ?, ?, ?)
                     """,
-                    (str(data_lancamento), colaborador, int(erro), int(exito), int(faturado))
+                    (str(data_lancamento), colaborador, int(erro), int(exito), int(faturado), int(auditoria))
                 )
                 conn.commit()
                 conn.close()
@@ -715,6 +752,7 @@ elif pagina == "📋 Histórico":
                 "sysvet_erro",
                 "sysvet_exito",
                 "faturado",
+                "auditoria",
                 "produtividade_total"
             ]
         ].copy()
@@ -727,6 +765,7 @@ elif pagina == "📋 Histórico":
             "SYSVET Erro",
             "SYSVET Êxito",
             "Faturado",
+            "Auditoria",
             "Produtividade Total"
         ]
 
