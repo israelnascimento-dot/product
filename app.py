@@ -175,49 +175,8 @@ def gerar_backup_json():
     return json.dumps(dados_backup, ensure_ascii=False, indent=4)
 
 
-def restaurar_backup_json(json_str):
-    try:
-        dados = json.loads(json_str)
-        conn = conectar()
-        cursor = conn.cursor()
-
-        cursor.execute("DELETE FROM colaboradores")
-        cursor.execute("DELETE FROM produtividade")
-        cursor.execute("DELETE FROM acessos_colaboradores")
-
-        for item in dados.get("colaboradores", []):
-            cursor.execute("INSERT INTO colaboradores (id, nome) VALUES (?, ?)", (item.get("id"), item.get("nome")))
-
-        for item in dados.get("produtividade", []):
-            auditoria_val = item.get("auditoria", 0)
-            if auditoria_val is None:
-                auditoria_val = 0
-
-            cursor.execute("""
-                INSERT INTO produtividade (id, data, colaborador, sysvet_erro, sysvet_exito, faturado, auditoria)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (
-                item.get("id"), 
-                item.get("data"), 
-                item.get("colaborador"), 
-                item.get("sysvet_erro"), 
-                item.get("sysvet_exito"), 
-                item.get("faturado"),
-                auditoria_val
-            ))
-
-        for item in dados.get("acessos_colaboradores", []):
-            cursor.execute("INSERT INTO acessos_colaboradores (id, nome, senha) VALUES (?, ?, ?)", (item.get("id"), item.get("nome"), item.get("senha")))
-
-        conn.commit()
-        conn.close()
-        return True, "Backup restaurado com sucesso!"
-    except Exception as e:
-        return False, f"Erro ao restaurar backup: {str(e)}"
-
-
 # =========================================================
-# DESIGN SYSTEM EXCLUSIVO (UI / UX + BACKGROUND PREMIUM MESH)
+# DESIGN SYSTEM EXCLUSIVO (UI / UX)
 # =========================================================
 
 if "modo_noturno" not in st.session_state:
@@ -527,7 +486,7 @@ elif pagina == "🔑 Configurar Acessos" and st.session_state.perfil == "admin":
 
 
 # =========================================================
-# IMPORTAR DADOS (EXCEL / CSV - TOTALMENTE FLEXÍVEL)
+# IMPORTAR DADOS (EXCEL / CSV - BLINDADO COM EXIBIÇÃO DE ERRO)
 # =========================================================
 
 elif pagina == "📥 Importar Dados" and st.session_state.perfil == "admin":
@@ -538,38 +497,52 @@ elif pagina == "📥 Importar Dados" and st.session_state.perfil == "admin":
 
     if arquivo_upload is not None:
         try:
-            # Leitura flexível independente do tipo de arquivo
-            if arquivo_upload.name.endswith(".csv"):
+            nome_arquivo = arquivo_upload.name.lower()
+            
+            if nome_arquivo.endswith(".csv"):
                 df_importado = pd.read_csv(arquivo_upload)
+            elif nome_arquivo.endswith(".xlsx"):
+                df_importado = pd.read_excel(arquivo_upload, engine="openpyxl")
+            elif nome_arquivo.endswith(".xls"):
+                df_importado = pd.read_excel(arquivo_upload, engine="xlrd")
             else:
-                df_importado = pd.read_excel(arquivo_upload)
+                st.error("❌ Formato de arquivo não suportado. Envie um arquivo .csv, .xls ou .xlsx.")
+                st.stop()
 
-            st.success("Arquivo lido com sucesso! Pré-visualização dos dados:")
+            st.success("✅ Arquivo lido com sucesso! Pré-visualização dos dados:")
             st.dataframe(df_importado.head(), use_container_width=True)
 
             if st.button("🚀 Confirmar e Inserir Dados no Banco", use_container_width=True):
                 conn = conectar()
                 cursor = conn.cursor()
 
-                for _, linha in df_importado.iterrows():
-                    # Tenta ler colunas comuns de forma dinâmica para evitar erros
-                    data_val = str(linha.get("data", linha.get("Data", date.today())))
-                    colab_val = str(linha.get("colaborador", linha.get("Colaborador", "Desconhecido")))
-                    erro_val = int(linha.get("sysvet_erro", linha.get("Erro", 0)) or 0)
-                    exito_val = int(linha.get("sysvet_exito", linha.get("Exito", 0)) or 0)
-                    faturado_val = int(linha.get("faturado", linha.get("Faturado", 0)) or 0)
-                    auditoria_val = int(linha.get("auditoria", linha.get("Auditoria", 0)) or 0)
+                sucessos = 0
+                erros_linha = 0
 
-                    cursor.execute("""
-                        INSERT INTO produtividade (data, colaborador, sysvet_erro, sysvet_exito, faturado, auditoria)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                    """, (data_val, colab_val, erro_val, exito_val, faturado_val, auditoria_val))
+                for _, linha in df_importado.iterrows():
+                    try:
+                        data_val = str(linha.get("data", linha.get("Data", date.today())))[:10]
+                        colab_val = str(linha.get("colaborador", linha.get("Colaborador", "Desconhecido")))
+                        
+                        erro_val = int(linha.get("sysvet_erro", linha.get("Erro", 0)) or 0)
+                        exito_val = int(linha.get("sysvet_exito", linha.get("Exito", 0)) or 0)
+                        faturado_val = int(linha.get("faturado", linha.get("Faturado", 0)) or 0)
+                        auditoria_val = int(linha.get("auditoria", linha.get("Auditoria", 0)) or 0)
+
+                        cursor.execute("""
+                            INSERT INTO produtividade (data, colaborador, sysvet_erro, sysvet_exito, faturado, auditoria)
+                            VALUES (?, ?, ?, ?, ?, ?)
+                        """, (data_val, colab_val, erro_val, exito_val, faturado_val, auditoria_val))
+                        sucessos += 1
+                    except Exception:
+                        erros_linha += 1
 
                 conn.commit()
                 conn.close()
-                st.success("✅ Dados importados e salvos com sucesso!")
+                st.success(f"✅ Importação concluída! {sucessos} registros inseridos com sucesso." + (f" ({erros_linha} linhas ignoradas por erro nos dados)" if erros_linha > 0 else ""))
+
         except Exception as e:
-            st.error(f"Erro ao processar o arquivo: {str(e)}")
+            st.error(f"❌ Erro ao processar o arquivo. Verifique se instalou as dependências (comando no terminal: pip install openpyxl xlrd). Detalhe técnico: {repr(e)}")
 
 
 # =========================================================
