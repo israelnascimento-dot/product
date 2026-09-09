@@ -564,15 +564,16 @@ elif pagina == "📝 Lançar produtividade":
 
 
 # =========================================================
-# COLABORADORES (Somente Admin)
+# COLABORADORES (Com Cadastro, Listagem e Exclusão)
 # =========================================================
 
 elif pagina == "👥 Colaboradores" and st.session_state.perfil == "admin":
-    st.title("👥 Colaboradores")
+    st.title("👥 Gerenciar Colaboradores")
 
     with st.form("form_colaborador"):
+        st.subheader("➕ Cadastrar Novo Colaborador")
         nome = st.text_input("Nome do colaborador")
-        cadastrar = st.form_submit_button("➕ CADASTRAR COLABORADOR", use_container_width=True)
+        cadastrar = st.form_submit_button("CADASTRAR COLABORADOR", use_container_width=True)
 
         if cadastrar:
             if not nome.strip():
@@ -589,11 +590,37 @@ elif pagina == "👥 Colaboradores" and st.session_state.perfil == "admin":
                     st.error("⚠️ Esse colaborador já está cadastrado.")
 
     st.divider()
+    st.subheader("📋 Lista e Exclusão de Colaboradores")
+    
     colaboradores = buscar_colaboradores()
     if colaboradores.empty:
         st.info("Nenhum colaborador cadastrado.")
     else:
         st.dataframe(colaboradores[["id", "nome"]], use_container_width=True, hide_index=True)
+
+        st.divider()
+        st.subheader("🗑️ Excluir Colaborador")
+        st.warning("⚠️ Atenção: Ao excluir um colaborador, o acesso dele também será removido. O histórico de produtividade anterior é preservado por segurança.")
+
+        colab_para_excluir = st.selectbox("Selecione o colaborador que deseja excluir", colaboradores["nome"].tolist(), key="select_excluir_colab")
+
+        confirmar_exclusao = st.checkbox("Confirmo a exclusão deste colaborador.", key="check_excluir_colab")
+
+        if confirmar_exclusao:
+            if st.button("🗑️ EXCLUIR COLABORADOR SELECIONADO", type="primary", use_container_width=True):
+                conn = conectar()
+                cursor = conn.cursor()
+                
+                # Remove o colaborador
+                cursor.execute("DELETE FROM colaboradores WHERE nome = ?", (colab_para_excluir,))
+                
+                # Remove também o acesso associado, se houver
+                cursor.execute("DELETE FROM acessos_colaboradores WHERE nome = ?", (colab_para_excluir,))
+                
+                conn.commit()
+                conn.close()
+                st.success(f"✅ O colaborador '{colab_para_excluir}' foi excluído com sucesso!")
+                st.rerun()
 
 
 # =========================================================
@@ -788,4 +815,4 @@ elif pagina == "🔐 Alterar senha" and st.session_state.perfil == "admin":
                 st.error("❌ As senhas novas não coincidem.")
             else:
                 alterar_senha(nova_senha)
-                st.success("✅ Senha altered com sucesso!")
+                st.success("✅ Senha alterada com sucesso!")
