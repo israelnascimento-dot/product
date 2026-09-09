@@ -312,18 +312,20 @@ if st.sidebar.button("🚪 ENCERRAR SESSÃO", use_container_width=True):
 
 
 # =========================================================
-# DASHBOARD EXECUTIVO
+# DASHBOARD EXECUTIVO (ESTILO POWER BI)
 # =========================================================
 
 if pagina == "📊 Dashboard Executivo" and st.session_state.perfil == "admin":
-    st.title("📊 Dashboard Executivo")
-    st.caption("Central de inteligência analítica e acompanhamento de métricas de produtividade")
+    st.title("📊 Dashboard Executivo — Business Intelligence")
+    st.caption("Painel analítico integrado com filtros globais e visualizações consolidadas")
 
     df = buscar_produtividade()
     if df.empty:
         st.info("Ainda não existem registros de produtividade para renderizar o painel.")
         st.stop()
 
+    # Barra de Filtros Estilo Power BI
+    st.markdown("### 🎛️ Filtros Globais")
     col_f1, col_f2, col_f3 = st.columns([2, 2, 1])
     lista_colaboradores = sorted(df["colaborador"].unique().tolist())
 
@@ -334,14 +336,15 @@ if pagina == "📊 Dashboard Executivo" and st.session_state.perfil == "admin":
     data_max = df["data"].max().date()
 
     with col_f2:
-        periodo = st.date_input("📅 Janela Temporal", value=(data_min, data_max), min_value=data_min, max_value=data_max)
+        periodo = st.date_input("📅 Janela Temporal (Filtro de Data)", value=(data_min, data_max), min_value=data_min, max_value=data_max)
 
     with col_f3:
         st.write("")
         st.write("")
-        if st.button("🔄 Sincronizar", use_container_width=True):
+        if st.button("🔄 Atualizar Dados", use_container_width=True):
             st.rerun()
 
+    # Aplicando Filtros no DataFrame
     if isinstance(periodo, tuple) and len(periodo) == 2:
         inicio, fim = periodo
         df_filtrado = df[(df["data"].dt.date >= inicio) & (df["data"].dt.date <= fim)].copy()
@@ -352,9 +355,10 @@ if pagina == "📊 Dashboard Executivo" and st.session_state.perfil == "admin":
         df_filtrado = df_filtrado[df_filtrado["colaborador"] == colaborador_filtro].copy()
 
     if df_filtrado.empty:
-        st.warning("Não há dados consolidados para os parâmetros selecionados.")
+        st.warning("⚠️ Não há dados consolidados para os parâmetros selecionados.")
         st.stop()
 
+    # Métricas Principais (Cards Estilo PBI)
     erro = int(df_filtrado["sysvet_erro"].sum())
     exito = int(df_filtrado["sysvet_exito"].sum())
     faturado = int(df_filtrado["faturado"].sum())
@@ -363,6 +367,7 @@ if pagina == "📊 Dashboard Executivo" and st.session_state.perfil == "admin":
     produtividade = erro + exito + faturado + auditoria
     taxa_media = (exito / total_sysvet * 100) if total_sysvet > 0 else 0
 
+    st.markdown("---")
     c1, c2, c3, c4, c5, c6 = st.columns(6)
     c1.metric("❌ Erro SYSVET", f"{erro:,}")
     c2.metric("✅ Êxito SYSVET", f"{exito:,}")
@@ -370,6 +375,78 @@ if pagina == "📊 Dashboard Executivo" and st.session_state.perfil == "admin":
     c4.metric("🔍 Auditoria", f"{auditoria:,}")
     c5.metric("📊 Volume Total", f"{produtividade:,}")
     c6.metric("🎯 Taxa Êxito", f"{taxa_media:.1f}%")
+    st.markdown("---")
+
+    # Layout de Gráficos (Estilo Power BI - 2 Colunas por Linha)
+    col_g1, col_g2 = st.columns(2)
+
+    with col_g1:
+        st.subheader("📈 Evolução Temporal da Produtividade")
+        df_tempo = df_filtrado.groupby(df_filtrado["data"].dt.date)[["sysvet_exito", "faturado", "auditoria"]].sum().reset_index()
+        df_tempo_melted = df_tempo.melt(id_vars=["data"], value_vars=["sysvet_exito", "faturado", "auditoria"], var_name="Métrica", value_name="Quantidade")
+        
+        fig_linha = px.line(
+            df_tempo_melted, 
+            x="data", 
+            y="Quantidade", 
+            color="Métrica", 
+            markers=True,
+            template="plotly_dark" if st.session_state.modo_noturno else "plotly_white"
+        )
+        fig_linha.update_layout(xaxis_title="Data", yaxis_title="Volume", legend_title="Indicadores")
+        st.plotly_chart(fig_linha, use_container_width=True)
+
+    with col_g2:
+        st.subheader("👥 Produtividade por Colaborador")
+        df_colab = df_filtrado.groupby("colaborador")[["sysvet_exito", "faturado", "auditoria", "sysvet_erro"]].sum().reset_index()
+        df_colab_melted = df_colab.melt(id_vars=["colaborador"], value_vars=["sysvet_exito", "faturado", "auditoria", "sysvet_erro"], var_name="Categoria", value_name="Total")
+        
+        fig_barra = px.bar(
+            df_colab_melted, 
+            x="colaborador", 
+            y="Total", 
+            color="Categoria", 
+            barmode="stack",
+            template="plotly_dark" if st.session_state.modo_noturno else "plotly_white"
+        )
+        fig_barra.update_layout(xaxis_title="Colaborador", yaxis_title="Total Acumulado", legend_title="Métricas")
+        st.plotly_chart(fig_barra, use_container_width=True)
+
+    col_g3, col_g4 = st.columns(2)
+
+    with col_g3:
+        st.subheader("🍩 Distribuição dos Tipos de Atividades")
+        df_pizza = pd.DataFrame({
+            "Categoria": ["Sysvet Êxito", "Sysvet Erro", "Faturado", "Auditoria"],
+            "Total": [exito, erro, faturado, auditoria]
+        })
+        fig_pizza = px.pie(
+            df_pizza, 
+            names="Categoria", 
+            values="Total", 
+            hole=0.4,
+            template="plotly_dark" if st.session_state.modo_noturno else "plotly_white"
+        )
+        st.plotly_chart(fig_pizza, use_container_width=True)
+
+    with col_g4:
+        st.subheader("📊 Taxa de Êxito Individual por Colaborador")
+        df_taxa = df_filtrado.groupby("colaborador").agg({
+            "sysvet_exito": "sum",
+            "total_sysvet": "sum"
+        }).reset_index()
+        df_taxa["Taxa (%)"] = df_taxa.apply(lambda x: (x["sysvet_exito"] / x["total_sysvet"] * 100) if x["total_sysvet"] > 0 else 0, axis=1)
+
+        fig_taxa = px.bar(
+            df_taxa,
+            x="colaborador",
+            y="Taxa (%)",
+            text="Taxa (%)",
+            template="plotly_dark" if st.session_state.modo_noturno else "plotly_white"
+        )
+        fig_taxa.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+        fig_taxa.update_layout(xaxis_title="Colaborador", yaxis_title="Taxa de Êxito (%)")
+        st.plotly_chart(fig_taxa, use_container_width=True)
 
 
 # =========================================================
@@ -487,7 +564,7 @@ elif pagina == "🔑 Configurar Acessos" and st.session_state.perfil == "admin":
 
 
 # =========================================================
-# EXCLUIR HISTÓRICO (NOVO)
+# EXCLUIR HISTÓRICO
 # =========================================================
 
 elif pagina == "🗑️ Excluir Histórico" and st.session_state.perfil == "admin":
@@ -542,7 +619,7 @@ elif pagina == "🗑️ Excluir Histórico" and st.session_state.perfil == "admi
 
 
 # =========================================================
-# IMPORTAR DADOS (EXCEL / CSV - BLINDADO COM EXIBIÇÃO DE ERRO)
+# IMPORTAR DADOS (EXCEL / CSV)
 # =========================================================
 
 elif pagina == "📥 Importar Dados" and st.session_state.perfil == "admin":
