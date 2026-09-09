@@ -287,6 +287,7 @@ if st.session_state.perfil == "admin":
         "📊 Dashboard Executivo",
         "📝 Lançar Produtividade",
         "👥 Gerenciar Colaboradores",
+        "🗑️ Excluir Colaborador",
         "🔑 Configurar Acessos",
         "📋 Histórico Geral",
         "🗑️ Excluir Histórico",
@@ -324,7 +325,6 @@ if pagina == "📊 Dashboard Executivo" and st.session_state.perfil == "admin":
         st.info("Ainda não existem registros de produtividade para renderizar o painel.")
         st.stop()
 
-    # Barra de Filtros Estilo Power BI
     st.markdown("### 🎛️ Filtros Globais")
     col_f1, col_f2, col_f3 = st.columns([2, 2, 1])
     lista_colaboradores = sorted(df["colaborador"].unique().tolist())
@@ -344,7 +344,6 @@ if pagina == "📊 Dashboard Executivo" and st.session_state.perfil == "admin":
         if st.button("🔄 Atualizar Dados", use_container_width=True):
             st.rerun()
 
-    # Aplicando Filtros no DataFrame
     if isinstance(periodo, tuple) and len(periodo) == 2:
         inicio, fim = periodo
         df_filtrado = df[(df["data"].dt.date >= inicio) & (df["data"].dt.date <= fim)].copy()
@@ -358,7 +357,6 @@ if pagina == "📊 Dashboard Executivo" and st.session_state.perfil == "admin":
         st.warning("⚠️ Não há dados consolidados para os parâmetros selecionados.")
         st.stop()
 
-    # Métricas Principais (Cards Estilo PBI)
     erro = int(df_filtrado["sysvet_erro"].sum())
     exito = int(df_filtrado["sysvet_exito"].sum())
     faturado = int(df_filtrado["faturado"].sum())
@@ -377,7 +375,6 @@ if pagina == "📊 Dashboard Executivo" and st.session_state.perfil == "admin":
     c6.metric("🎯 Taxa Êxito", f"{taxa_media:.1f}%")
     st.markdown("---")
 
-    # Layout de Gráficos (Estilo Power BI - 2 Colunas por Linha)
     col_g1, col_g2 = st.columns(2)
 
     with col_g1:
@@ -530,6 +527,48 @@ elif pagina == "👥 Gerenciar Colaboradores" and st.session_state.perfil == "ad
     colaboradores = buscar_colaboradores()
     if not colaboradores.empty:
         st.dataframe(colaboradores[["id", "nome"]], use_container_width=True, hide_index=True)
+
+
+# =========================================================
+# EXCLUIR COLABORADOR (NOVO)
+# =========================================================
+
+elif pagina == "🗑️ Excluir Colaborador" and st.session_state.perfil == "admin":
+    st.title("🗑️ Gerenciamento e Exclusão de Colaboradores")
+    st.caption("Selecione um colaborador para removê-lo definitivamente do cadastro do sistema.")
+
+    colaboradores = buscar_colaboradores()
+
+    if colaboradores.empty:
+        st.info("Nenhum colaborador cadastrado no momento.")
+    else:
+        st.dataframe(colaboradores[["id", "nome"]], use_container_width=True, hide_index=True)
+        st.markdown("---")
+
+        with st.form("form_excluir_colaborador"):
+            st.subheader("❌ Remover Colaborador")
+            colab_para_excluir = st.selectbox("Selecione o colaborador a ser excluído", colaboradores["nome"].tolist())
+            
+            confirmar_exclusao = st.checkbox("Estou ciente de que a remoção excluirá o cadastro do colaborador")
+            deletar_colab = st.form_submit_button("🗑️ EXCLUIR COLABORADOR SELECIONADO", use_container_width=True)
+
+            if deletar_colab:
+                if confirmar_exclusao:
+                    conn = conectar()
+                    cursor = conn.cursor()
+                    
+                    # Remove da tabela de colaboradores
+                    cursor.execute("DELETE FROM colaboradores WHERE nome = ?", (colab_para_excluir,))
+                    # Remove também os acessos associados, caso existam
+                    cursor.execute("DELETE FROM acessos_colaboradores WHERE nome = ?", (colab_para_excluir,))
+                    
+                    conn.commit()
+                    conn.close()
+                    
+                    st.success(f"✅ O colaborador '{colab_para_excluir}' foi removido com sucesso!")
+                    st.rerun()
+                else:
+                    st.error("❌ Marque a caixa de confirmação acima para autorizar a exclusão.")
 
 
 # =========================================================
