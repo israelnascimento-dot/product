@@ -133,15 +133,15 @@ def buscar_produtividade():
         df["sysvet_erro"] = pd.to_numeric(df["sysvet_erro"], errors="coerce").fillna(0).astype(int)
         df["sysvet_exito"] = pd.to_numeric(df["sysvet_exito"], errors="coerce").fillna(0).astype(int)
         df["faturado"] = pd.to_numeric(df["faturado"], errors="coerce").fillna(0).astype(int)
-        
+
         if "auditoria" not in df.columns:
             df["auditoria"] = 0
         else:
             df["auditoria"] = pd.to_numeric(df["auditoria"], errors="coerce").fillna(0).astype(int)
-        
+
         df["total_sysvet"] = df["sysvet_erro"] + df["sysvet_exito"]
         df["produtividade_total"] = df["sysvet_erro"] + df["sysvet_exito"] + df["faturado"] + df["auditoria"]
-        
+
         df["taxa_exito"] = df.apply(
             lambda linha: (linha["sysvet_exito"] / linha["total_sysvet"] * 100) if linha["total_sysvet"] > 0 else 0,
             axis=1
@@ -152,7 +152,7 @@ def buscar_produtividade():
 def gerar_backup_json():
     conn = conectar()
     cursor = conn.cursor()
-    
+
     cursor.execute("SELECT * FROM colaboradores")
     cols = [desc[0] for desc in cursor.description]
     colaboradores = [dict(zip(cols, row)) for row in cursor.fetchall()]
@@ -227,12 +227,11 @@ if not st.session_state.modo_noturno:
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-    
+
     html, body, [class*="css"] {
         font-family: 'Plus Jakarta Sans', sans-serif;
     }
-    
-    /* Background Light Customizado com Textura Mesh e Grid */
+
     .stApp { 
         background-color: #f8fafc;
         background-image: 
@@ -264,8 +263,7 @@ if not st.session_state.modo_noturno:
     p, label { 
         color: #475569 !important; 
     }
-    
-    /* Cards Modernos Estilo Vercel/Notion com Efeito Glass */
+
     div[data-testid="stMetric"] { 
         background: rgba(255, 255, 255, 0.85); 
         backdrop-filter: blur(12px);
@@ -304,8 +302,7 @@ if not st.session_state.modo_noturno:
         font-weight: 800; 
         font-size: 1.85rem;
     }
-    
-    /* Botões Dinâmicos e Elegantes */
+
     .stButton > button, .stDownloadButton > button { 
         border-radius: 12px; 
         font-weight: 600; 
@@ -335,12 +332,11 @@ else:
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-    
+
     html, body, [class*="css"] {
         font-family: 'Plus Jakarta Sans', sans-serif;
     }
-    
-    /* Background Dark Deep Tech com Glow e Mesh Neomórfico */
+
     .stApp { 
         background-color: #030712;
         background-image: 
@@ -375,8 +371,7 @@ else:
     p, label { 
         color: #94a3b8 !important; 
     }
-    
-    /* Cards (Dark Glassmorphism Premium) */
+
     div[data-testid="stMetric"] { 
         background: rgba(15, 23, 42, 0.75) !important; 
         backdrop-filter: blur(16px);
@@ -409,7 +404,7 @@ else:
         font-weight: 800; 
         font-size: 1.85rem;
     }
-    
+
     .stButton > button { 
         border-radius: 12px; 
         font-weight: 600; 
@@ -523,6 +518,7 @@ if st.session_state.perfil == "admin":
         "👥 Gerenciar Colaboradores",
         "🔑 Configurar Acessos",
         "📋 Histórico Geral",
+        "📥 Importar Dados",
         "📥 Backup & Exportação",
         "🔐 Segurança / Senha"
     ]
@@ -601,7 +597,7 @@ if pagina == "📊 Dashboard Executivo" and st.session_state.perfil == "admin":
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("### 📌 Indicadores Chave de Desempenho (KPIs)")
-    
+
     c1, c2, c3, c4, c5, c6 = st.columns(6)
     c1.metric("❌ Erro SYSVET", f"{erro:,}")
     c2.metric("✅ Êxito SYSVET", f"{exito:,}")
@@ -647,7 +643,7 @@ if pagina == "📊 Dashboard Executivo" and st.session_state.perfil == "admin":
             "Categoria": ["SYSVET Erro", "SYSVET Êxito", "Faturado", "Auditoria"],
             "Quantidade": [erro, exito, faturado, auditoria]
         })
-        
+
         fig_pie = px.pie(
             df_pizza, 
             names="Categoria", 
@@ -791,7 +787,7 @@ elif pagina == "👥 Gerenciar Colaboradores" and st.session_state.perfil == "ad
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.subheader("📋 Equipe Cadastrada")
-    
+
     colaboradores = buscar_colaboradores()
     if colaboradores.empty:
         st.info("Nenhum colaborador registrado.")
@@ -870,6 +866,84 @@ elif pagina == "🔑 Configurar Acessos" and st.session_state.perfil == "admin":
 
 
 # =========================================================
+# IMPORTAR DADOS (EXCEL / CSV)
+# =========================================================
+
+elif pagina == "📥 Importar Dados" and st.session_state.perfil == "admin":
+    st.title("📥 Importação de Planilhas (Excel / CSV)")
+    st.caption("Faça upload de um arquivo .xlsx, .xls ou .csv contendo os dados de produtividade para carga no banco.")
+
+    st.markdown("""
+    <div style="background: rgba(99, 102, 241, 0.08); padding: 16px; border-radius: 12px; border: 1px solid rgba(99, 102, 241, 0.2); margin-bottom: 20px;">
+        <p style="margin:0; font-weight: 600;">📌 Requisitos do Arquivo:</p>
+        <p style="margin:4px 0 0 0; font-size: 0.9rem;">O arquivo enviado deve conter obrigatoriamente as seguintes colunas (os nomes devem coincidir ou serão mapeados):</p>
+        <ul style="margin: 8px 0 0 0; font-size: 0.9rem; color: #94a3b8;">
+            <li><b>data</b> (Formato AAAA-MM-DD ou DD/MM/AAAA)</li>
+            <li><b>colaborador</b> (Nome exato do colaborador)</li>
+            <li><b>sysvet_erro</b> (Número inteiro)</li>
+            <li><b>sysvet_exito</b> (Número inteiro)</li>
+            <li><b>faturado</b> (Número inteiro)</li>
+            <li><b>auditoria</b> (Número inteiro)</li>
+        </ul>
+    </div>
+    """, unsafe_allow_html=True)
+
+    arquivo_upload = st.file_uploader("Escolha o arquivo de dados", type=["xlsx", "xls", "csv"])
+
+    if arquivo_upload is not None:
+        try:
+            if arquivo_upload.name.endswith('.csv'):
+                df_import = pd.read_csv(arquivo_upload)
+            else:
+                df_import = pd.read_excel(arquivo_upload)
+
+            st.subheader("🔍 Pré-visualização dos Dados Carregados")
+            st.dataframe(df_import.head(10), use_container_width=True)
+
+            colunas_obrigatorias = ["data", "colaborador", "sysvet_erro", "sysvet_exito", "faturado", "auditoria"]
+            colunas_presentes = [col in df_import.columns for col in colunas_obrigatorias]
+
+            if not all(colunas_presentes):
+                st.error(f"❌ O arquivo enviado não contém todas as colunas obrigatórias: {colunas_obrigatorias}")
+            else:
+                if st.button("🚀 PROCESSAR E INSERIR NO BANCO DE DADOS", use_container_width=True):
+                    conn = conectar()
+                    cursor = conn.cursor()
+
+                    sucessos = 0
+                    erros = 0
+
+                    for _, row in df_import.iterrows():
+                        try:
+                            data_val = str(pd.to_datetime(row["data"]).date())
+                            colab_val = str(row["colaborador"]).strip()
+                            err_val = int(row["sysvet_erro"]) if pd.notna(row["sysvet_erro"]) else 0
+                            ex_val = int(row["sysvet_exito"]) if pd.notna(row["sysvet_exito"]) else 0
+                            fat_val = int(row["faturado"]) if pd.notna(row["faturado"]) else 0
+                            aud_val = int(row["auditoria"]) if pd.notna(row["auditoria"]) else 0
+
+                            # Garantir que o colaborador exista na tabela de colaboradores para integridade
+                            cursor.execute("INSERT OR IGNORE INTO colaboradores (nome) VALUES (?)", (colab_val,))
+
+                            cursor.execute("""
+                                INSERT INTO produtividade (data, colaborador, sysvet_erro, sysvet_exito, faturado, auditoria)
+                                VALUES (?, ?, ?, ?, ?, ?)
+                            """, (data_val, colab_val, err_val, ex_val, fat_val, aud_val))
+                            sucessos += 1
+                        except Exception:
+                            erros += 1
+
+                    conn.commit()
+                    conn.close()
+
+                    st.success(f"✅ Importação finalizada! {sucessos} registros inseridos com sucesso." + (f" ({erros} falhas ignoradas)." if erros > 0 else ""))
+                    st.rerun()
+
+        except Exception as e:
+            st.error(f"❌ Erro ao ler o arquivo: {str(e)}")
+
+
+# =========================================================
 # HISTÓRICO
 # =========================================================
 
@@ -878,132 +952,67 @@ elif pagina == "📋 Histórico Geral":
 
     df = buscar_produtividade()
 
-    if st.session_state.perfil == "colaborador":
-        df = df[df["colaborador"] == st.session_state.usuario_logado]
-
     if df.empty:
-        st.info("Nenhum lançamento registrado no momento.")
+        st.info("Nenhum registro encontrado no histórico.")
     else:
-        total_lancamentos = len(df)
-        soma_prod_hist = int(df["produtividade_total"].sum())
-        
-        m1, m2 = st.columns(2)
-        m1.metric("📦 Total de Registros", f"{total_lancamentos:,}")
-        m2.metric("📊 Volume Acumulado", f"{soma_prod_hist:,}")
-        st.markdown("<br>", unsafe_allow_html=True)
+        if st.session_state.perfil == "colaborador":
+            df = df[df["colaborador"] == st.session_state.usuario_logado]
 
-        visualizar = df[
-            [
-                "id",
-                "data",
-                "colaborador",
-                "sysvet_erro",
-                "sysvet_exito",
-                "faturado",
-                "auditoria",
-                "produtividade_total"
-            ]
-        ].copy()
-
-        visualizar["data"] = visualizar["data"].dt.strftime("%d/%m/%Y")
-        visualizar.columns = [
-            "ID", "Data", "Colaborador", "SYSVET Erro", "SYSVET Êxito", "Faturado", "Auditoria", "Total Geral"
-        ]
-
-        st.dataframe(visualizar, use_container_width=True, hide_index=True)
-
-        if st.session_state.perfil == "admin":
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.subheader("🗑️ Auditoria: Excluir Lançamentos por Data")
-            data_exclusao = st.date_input("📅 Data Alvo para Limpeza", value=date.today(), key="data_exclusao")
-
-            registros_data = df[df["data"].dt.date == data_exclusao].copy()
-
-            if not registros_data.empty:
-                st.warning(f"Atenção: Existem {len(registros_data)} registro(s) associados a esta data.")
-                confirmar_data = st.checkbox("Confirmo a exclusão definitiva de todos os registros desta data específica.", key="confirmar_exclusao_data")
-
-                if confirmar_data:
-                    if st.button("🗑️ EXECUTAR REMOÇÃO DOS REGISTROS", use_container_width=True):
-                        conn = conectar()
-                        cursor = conn.cursor()
-                        cursor.execute("DELETE FROM produtividade WHERE data = ?", (str(data_exclusao),))
-                        conn.commit()
-                        conn.close()
-                        st.success("✅ Registros excluídos com sucesso.")
-                        st.rerun()
+        st.dataframe(df, use_container_width=True, hide_index=True)
 
 
 # =========================================================
-# EXPORTAR / BACKUP
+# BACKUP & EXPORTAÇÃO
 # =========================================================
 
 elif pagina == "📥 Backup & Exportação" and st.session_state.perfil == "admin":
     st.title("📥 Backup & Exportação de Dados")
 
-    df = buscar_produtividade()
-
-    if not df.empty:
-        st.subheader("📊 Exportar Relatório em Planilha Excel")
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine="openpyxl") as writer:
-            df.to_excel(writer, index=False, sheet_name="Produtividade")
-        processed_data = output.getvalue()
-
-        st.download_button(
-            label="📥 Baixar Planilha Consolidada (.xlsx)",
-            data=processed_data,
-            file_name=f"produtividade_enterprise_{date.today()}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True
-        )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.subheader("💾 Backup Completo do Workspace (JSON)")
-    json_backup = gerar_backup_json()
+    st.subheader("📦 Backup em Formato JSON")
+    json_data = gerar_backup_json()
     st.download_button(
-        label="📥 Baixar Arquivo de Backup do Sistema (.json)",
-        data=json_backup,
-        file_name=f"backup_enterprise_{date.today()}.json",
+        label="⬇️ Baixar Backup Completo (JSON)",
+        data=json_data,
+        file_name=f"backup_produtividade_{date.today()}.json",
         mime="application/json",
         use_container_width=True
     )
 
     st.markdown("<br>", unsafe_allow_html=True)
-    st.subheader("♻️ Restaurar Estado do Sistema via Backup")
-    arquivo_submetido = st.file_uploader("Enviar arquivo JSON de backup válido", type=["json"])
-    if arquivo_submetido is not None:
-        conteudo_json = arquivo_submetido.getvalue().decode("utf-8")
-        if st.button("🔄 EXECUTAR RESTAURAÇÃO COMPLETA", use_container_width=True):
-            sucesso, mensagem = restaurar_backup_json(conteudo_json)
+    st.subheader("📤 Restaurar Backup")
+    arquivo_json = st.file_uploader("Selecione o arquivo de backup (.json)", type=["json"])
+    if arquivo_json is not None:
+        conteudo_json = arquivo_json.read().decode("utf-8")
+        if st.button("🔄 RESTAURAR SISTEMA A PARTIR DO BACKUP", use_container_width=True):
+            sucesso, msg = restaurar_backup_json(conteudo_json)
             if sucesso:
-                st.success(mensagem)
+                st.success(msg)
                 st.rerun()
             else:
-                st.error(mensagem)
+                st.error(msg)
 
 
 # =========================================================
-# ALTERAR SENHA
+# SEGURANÇA / SENHA
 # =========================================================
 
 elif pagina == "🔐 Segurança / Senha" and st.session_state.perfil == "admin":
-    st.title("🔐 Configurações de Segurança")
+    st.title("🔐 Segurança & Alteração de Senha Master")
 
     with st.form("form_senha"):
         senha_atual = st.text_input("Senha Master Atual", type="password")
         nova_senha = st.text_input("Nova Senha Master", type="password")
-        confirma_senha = st.text_input("Confirme a Nova Senha Master", type="password")
+        confirmar_senha = st.text_input("Confirmar Nova Senha Master", type="password")
 
-        atualizar = st.form_submit_button("🔒 ATUALIZAR CREDENCIAIS DE SEGURANÇA", use_container_width=True)
+        atualizar = st.form_submit_button("🔒 ATUALIZAR SENHA MASTER", use_container_width=True)
 
         if atualizar:
             if senha_atual != buscar_senha():
-                st.error("❌ A senha master atual informada está incorreta.")
+                st.error("❌ A senha master atual está incorreta.")
             elif not nova_senha.strip():
-                st.error("❌ A nova senha não pode ser vazia.")
-            elif nova_senha != confirma_senha:
+                st.error("❌ A nova senha não pode estar em branco.")
+            elif nova_senha != confirmar_senha:
                 st.error("❌ As novas senhas não coincidem.")
             else:
-                alterar_senha(nova_senha)
-                st.success("✅ Senha master atualizada com sucesso!")
+                alterar_senha(nova_senha.strip())
+                st.success("✅ Senha master alterada com sucesso!")
