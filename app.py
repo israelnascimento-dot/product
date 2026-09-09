@@ -217,11 +217,11 @@ def restaurar_backup_json(json_str):
 
 
 # =========================================================
-# DESIGN SYSTEM EXCLUSIVO (UI / UX REFINADO)
+# DESIGN SYSTEM EXCLUSIVO (UI / UX + BACKGROUND PREMIUM MESH)
 # =========================================================
 
 if "modo_noturno" not in st.session_state:
-    st.session_state.modo_noturno = False
+    st.session_state.modo_noturno = True  # Padrão Dark Mode corporativo tecnológico
 
 if not st.session_state.modo_noturno:
     st.markdown("""
@@ -231,38 +231,49 @@ if not st.session_state.modo_noturno:
     html, body, [class*="css"] {
         font-family: 'Plus Jakarta Sans', sans-serif;
     }
+    
+    /* Background Light Customizado com Textura Mesh e Grid */
     .stApp { 
-        background: #fcfcfd; 
-        color: #09090b; 
+        background-color: #f8fafc;
+        background-image: 
+            radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
+            radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.06) 0px, transparent 50%),
+            radial-gradient(at 50% 100%, rgba(14, 165, 233, 0.05) 0px, transparent 50%),
+            linear-gradient(to right, rgba(226, 232, 240, 0.3) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(226, 232, 240, 0.3) 1px, transparent 1px);
+        background-size: 100% 100%, 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+        color: #0f172a; 
     }
     [data-testid="stSidebar"] { 
-        background: linear-gradient(180deg, #09090b 0%, #18181b 100%); 
-        border-right: 1px solid #27272a;
+        background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%); 
+        border-right: 1px solid #e2e8f0;
     }
     [data-testid="stSidebar"] * { 
-        color: #f4f4f5 !important; 
+        color: #1e293b !important; 
     }
     h1 { 
-        color: #09090b !important; 
+        color: #0f172a !important; 
         font-weight: 800; 
         letter-spacing: -0.03em;
     }
     h2, h3 { 
-        color: #18181b !important; 
+        color: #1e293b !important; 
         font-weight: 700; 
         letter-spacing: -0.02em;
     }
     p, label { 
-        color: #52525b !important; 
+        color: #475569 !important; 
     }
     
-    /* Cards Modernos Estilo Vercel/Notion */
+    /* Cards Modernos Estilo Vercel/Notion com Efeito Glass */
     div[data-testid="stMetric"] { 
-        background: #ffffff; 
+        background: rgba(255, 255, 255, 0.85); 
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         padding: 22px; 
         border-radius: 16px; 
-        border: 1px solid #e4e4e7; 
-        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03);
+        border: 1px solid rgba(226, 232, 240, 0.8); 
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
         transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         position: relative;
         overflow: hidden;
@@ -274,15 +285,15 @@ if not st.session_state.modo_noturno:
         left: 0;
         width: 4px;
         height: 100%;
-        background: #6366f1;
+        background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%);
     }
     div[data-testid="stMetric"]:hover {
         transform: translateY(-3px);
-        box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 20px 35px -10px rgba(99, 102, 241, 0.15);
         border-color: #cbd5e1;
     }
     div[data-testid="stMetricLabel"] { 
-        color: #71717a !important; 
+        color: #64748b !important; 
         font-weight: 600;
         font-size: 0.8rem;
         text-transform: uppercase;
@@ -298,25 +309,25 @@ if not st.session_state.modo_noturno:
     .stButton > button, .stDownloadButton > button { 
         border-radius: 12px; 
         font-weight: 600; 
-        background: #09090b;
+        background: #0f172a;
         color: white;
-        border: 1px solid #27272a;
+        border: 1px solid #1e293b;
         padding: 0.6rem 1.2rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
         transition: all 0.2s ease;
     }
     .stButton > button:hover {
-        background: #27272a;
-        border-color: #3f3f46;
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        background: #1e293b;
+        border-color: #334155;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.2);
         color: white;
     }
     .stFormSubmitButton > button {
-        background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important;
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
         border: none !important;
     }
     .stFormSubmitButton > button:hover {
-        background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%) !important;
+        background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -328,41 +339,52 @@ else:
     html, body, [class*="css"] {
         font-family: 'Plus Jakarta Sans', sans-serif;
     }
+    
+    /* Background Dark Deep Tech com Glow e Mesh Neomórfico */
     .stApp { 
-        background: #09090b; 
-        color: #f4f4f5; 
+        background-color: #030712;
+        background-image: 
+            radial-gradient(at 10% 10%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+            radial-gradient(at 90% 10%, rgba(14, 165, 233, 0.12) 0px, transparent 50%),
+            radial-gradient(at 50% 90%, rgba(168, 85, 247, 0.10) 0px, transparent 50%),
+            linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+        background-size: 100% 100%, 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+        color: #f8fafc; 
     }
     [data-testid="stHeader"] { 
-        background-color: #09090b; 
+        background-color: transparent; 
     }
     [data-testid="stSidebar"] { 
-        background: linear-gradient(180deg, #030712 0%, #09090b 100%); 
-        border-right: 1px solid #1f2937;
+        background: linear-gradient(180deg, #020617 0%, #030712 100%); 
+        border-right: 1px solid rgba(255, 255, 255, 0.06);
     }
     [data-testid="stSidebar"] * { 
-        color: #f9fafb !important; 
+        color: #f8fafc !important; 
     }
     h1 { 
-        color: #f9fafb !important; 
+        color: #ffffff !important; 
         font-weight: 800; 
         letter-spacing: -0.03em;
     }
     h2, h3 { 
-        color: #e5e7eb !important; 
+        color: #f1f5f9 !important; 
         font-weight: 700; 
         letter-spacing: -0.02em;
     }
     p, label { 
-        color: #9ca3af !important; 
+        color: #94a3b8 !important; 
     }
     
-    /* Cards (Dark) */
+    /* Cards (Dark Glassmorphism Premium) */
     div[data-testid="stMetric"] { 
-        background: #111827 !important; 
+        background: rgba(15, 23, 42, 0.75) !important; 
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
         padding: 22px; 
         border-radius: 16px; 
-        border: 1px solid #1f2937; 
-        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.08); 
+        box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
         position: relative;
         overflow: hidden;
     }
@@ -373,17 +395,17 @@ else:
         left: 0;
         width: 4px;
         height: 100%;
-        background: #818cf8;
+        background: linear-gradient(180deg, #818cf8 0%, #6366f1 100%);
     }
     div[data-testid="stMetricLabel"] { 
-        color: #9ca3af !important; 
+        color: #94a3b8 !important; 
         font-weight: 600;
         font-size: 0.8rem;
         text-transform: uppercase;
         letter-spacing: 0.08em;
     }
     div[data-testid="stMetricValue"] { 
-        color: #f3f4f6 !important; 
+        color: #f8fafc !important; 
         font-weight: 800; 
         font-size: 1.85rem;
     }
@@ -391,13 +413,16 @@ else:
     .stButton > button { 
         border-radius: 12px; 
         font-weight: 600; 
-        background: #1f2937; 
-        color: #f9fafb; 
-        border: 1px solid #374151;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        background: rgba(30, 41, 59, 0.8); 
+        backdrop-filter: blur(8px);
+        color: #f8fafc; 
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+        transition: all 0.2s ease;
     }
     .stButton > button:hover { 
-        background: #374151; 
+        background: rgba(51, 65, 85, 0.9); 
+        border-color: rgba(255, 255, 255, 0.2);
         color: #ffffff; 
     }
     .stFormSubmitButton > button {
@@ -427,7 +452,7 @@ if not st.session_state.autenticado:
 
     with col2:
         st.markdown("<h1 style='text-align: center; font-size: 2.5rem;'>⚡ PRODUCT</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: #71717a; font-size: 1.05rem;'>Workspace Corporativo de Alta Performance</p>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; font-size: 1.05rem;'>Workspace Corporativo de Alta Performance</p>", unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
 
         tipo_login = st.radio("Acessar como:", ["Administrador", "Colaborador"], horizontal=True)
@@ -474,9 +499,9 @@ if not st.session_state.autenticado:
 
 st.sidebar.markdown("## ⚡ PRODUCT")
 st.sidebar.markdown(f"""
-<div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 15px;">
-    <p style="margin:0; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a1a1aa !important;">Sessão Ativa</p>
-    <p style="margin:4px 0 0 0; font-weight: 700; font-size: 0.95rem; color: #ffffff !important;">👤 {st.session_state.usuario_logado}</p>
+<div style="background: rgba(255,255,255,0.04); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 15px;">
+    <p style="margin:0; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Sessão Ativa</p>
+    <p style="margin:4px 0 0 0; font-weight: 700; font-size: 0.95rem;">👤 {st.session_state.usuario_logado}</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -534,7 +559,6 @@ if pagina == "📊 Dashboard Executivo" and st.session_state.perfil == "admin":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Filtros em bloco limpo
     with st.container():
         col_f1, col_f2, col_f3 = st.columns([2, 2, 1])
         lista_colaboradores = sorted(df["colaborador"].unique().tolist())
@@ -567,7 +591,6 @@ if pagina == "📊 Dashboard Executivo" and st.session_state.perfil == "admin":
         st.warning("Não há dados consolidados para os parâmetros selecionados.")
         st.stop()
 
-    # Cálculo KPIs
     erro = int(df_filtrado["sysvet_erro"].sum())
     exito = int(df_filtrado["sysvet_exito"].sum())
     faturado = int(df_filtrado["faturado"].sum())
@@ -589,7 +612,6 @@ if pagina == "📊 Dashboard Executivo" and st.session_state.perfil == "admin":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Gráficos Linha 1
     col_g1, col_g2 = st.columns(2)
 
     with col_g1:
@@ -615,7 +637,7 @@ if pagina == "📊 Dashboard Executivo" and st.session_state.perfil == "admin":
             paper_bgcolor="rgba(0,0,0,0)",
             margin=dict(l=10, r=30, t=10, b=10),
             height=380,
-            font=dict(family="Plus Jakarta Sans")
+            font=dict(family="Plus Jakarta Sans", color="#94a3b8" if st.session_state.modo_noturno else "#475569")
         )
         st.plotly_chart(fig_bar, use_container_width=True)
 
@@ -646,13 +668,12 @@ if pagina == "📊 Dashboard Executivo" and st.session_state.perfil == "admin":
             margin=dict(l=10, r=10, t=10, b=10),
             height=380,
             showlegend=False,
-            font=dict(family="Plus Jakarta Sans")
+            font=dict(family="Plus Jakarta Sans", color="#94a3b8" if st.session_state.modo_noturno else "#475569")
         )
         st.plotly_chart(fig_pie, use_container_width=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Gráfico de Linha Estilizado
     st.subheader("📈 Linha do Tempo de Produtividade Consolidada")
     df_tempo = df_filtrado.groupby("data")["produtividade_total"].sum().reset_index()
     df_tempo = df_tempo.sort_values("data")
@@ -669,7 +690,7 @@ if pagina == "📊 Dashboard Executivo" and st.session_state.perfil == "admin":
         line=dict(color="#6366f1", width=3.5, shape="spline"),
         marker=dict(size=8, color="#6366f1", line=dict(color="#ffffff", width=2)),
         fill='tozeroy',
-        fillcolor='rgba(99, 102, 241, 0.1)'
+        fillcolor='rgba(99, 102, 241, 0.15)'
     )
 
     fig_inv.update_layout(
@@ -680,9 +701,9 @@ if pagina == "📊 Dashboard Executivo" and st.session_state.perfil == "admin":
         margin=dict(l=10, r=10, t=20, b=10),
         height=380,
         hovermode="x unified",
-        xaxis=dict(showline=False, gridcolor='rgba(128, 128, 128, 0.1)'),
-        yaxis=dict(showline=False, gridcolor='rgba(128, 128, 128, 0.1)'),
-        font=dict(family="Plus Jakarta Sans")
+        xaxis=dict(showline=False, gridcolor='rgba(128, 128, 128, 0.08)' if st.session_state.modo_noturno else 'rgba(128, 128, 128, 0.15)'),
+        yaxis=dict(showline=False, gridcolor='rgba(128, 128, 128, 0.08)' if st.session_state.modo_noturno else 'rgba(128, 128, 128, 0.15)'),
+        font=dict(family="Plus Jakarta Sans", color="#94a3b8" if st.session_state.modo_noturno else "#475569")
     )
 
     st.plotly_chart(fig_inv, use_container_width=True)
