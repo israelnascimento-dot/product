@@ -7,7 +7,7 @@ from io import BytesIO
 import json
 
 # =========================================================
-# CONFIGURAÇÃO
+# CONFIGURAÇÃO DA PÁGINA
 # =========================================================
 
 st.set_page_config(
@@ -21,7 +21,7 @@ DB = "produtividade.db"
 
 
 # =========================================================
-# BANCO DE DADOS
+# BANCO DE DADOS (CRIAÇÃO DO ZERO)
 # =========================================================
 
 def conectar():
@@ -189,7 +189,7 @@ def restaurar_backup_json(json_str):
 
 
 # =========================================================
-# MODO VISUAL E CSS
+# ESTILIZAÇÃO VISUAL (MODO CLARO / NOTURNO)
 # =========================================================
 
 if "modo_noturno" not in st.session_state:
@@ -230,7 +230,7 @@ else:
 
 
 # =========================================================
-# CONTROLE DE SESSÃO / LOGIN
+# CONTROLE DE SESSÃO / TELA DE LOGIN
 # =========================================================
 
 if "autenticado" not in st.session_state:
@@ -334,7 +334,7 @@ if st.sidebar.button("🚪 SAIR", use_container_width=True):
 
 
 # =========================================================
-# DASHBOARD REFORMULADO (Somente Admin)
+# DASHBOARD EXECUTIVO
 # =========================================================
 
 if pagina == "📈 Dashboard" and st.session_state.perfil == "admin":
@@ -464,13 +464,11 @@ if pagina == "📈 Dashboard" and st.session_state.perfil == "admin":
     df_tempo = df_tempo.sort_values("data")
     df_tempo["data_str"] = df_tempo["data"].dt.strftime("%d/%m/%Y")
 
-    # Identificando tendência financeira (Alta ou Baixa comparando início e fim do período)
     if len(df_tempo) >= 2:
         tendencia_alta = df_tempo["produtividade_total"].iloc[-1] >= df_tempo["produtividade_total"].iloc[0]
     else:
         tendencia_alta = True
 
-    # Cores estilo Home Broker (Verde Esmeralda para alta positiva, Azul Corporativo clássico ou Vermelho se queda)
     cor_linha = "#10b981" if tendencia_alta else "#ef4444"
     cor_preenchimento = "rgba(16, 185, 129, 0.12)" if tendencia_alta else "rgba(239, 68, 68, 0.12)"
 
@@ -481,7 +479,6 @@ if pagina == "📈 Dashboard" and st.session_state.perfil == "admin":
         markers=True
     )
 
-    # Estilização exata de gráfico de ações/investimentos (spline financeiro)
     fig_inv.update_traces(
         line=dict(color=cor_linha, width=3.5, shape="spline"),
         marker=dict(size=8, color=cor_linha, line=dict(color="#ffffff", width=2)),
@@ -791,4 +788,4 @@ elif pagina == "🔐 Alterar senha" and st.session_state.perfil == "admin":
                 st.error("❌ As senhas novas não coincidem.")
             else:
                 alterar_senha(nova_senha)
-                st.success("✅ Senha alterada com sucesso!")
+                st.success("✅ Senha altered com sucesso!")
