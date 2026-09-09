@@ -289,6 +289,7 @@ if st.session_state.perfil == "admin":
         "👥 Gerenciar Colaboradores",
         "🔑 Configurar Acessos",
         "📋 Histórico Geral",
+        "🗑️ Excluir Histórico",
         "📥 Importar Dados",
         "📥 Backup & Exportação",
         "🔐 Segurança / Senha"
@@ -483,6 +484,61 @@ elif pagina == "🔑 Configurar Acessos" and st.session_state.perfil == "admin":
                 conn.close()
                 st.success(f"✅ Credenciais salvas para {colab_nome}!")
                 st.rerun()
+
+
+# =========================================================
+# EXCLUIR HISTÓRICO (NOVO)
+# =========================================================
+
+elif pagina == "🗑️ Excluir Histórico" and st.session_state.perfil == "admin":
+    st.title("🗑️ Gerenciamento e Exclusão de Registros")
+    st.caption("Consulte a coluna 'id' dos lançamentos abaixo para realizar exclusões pontuais ou limpezas completas.")
+
+    df_hist = buscar_produtividade()
+
+    if df_hist.empty:
+        st.info("Nenhum registro de produtividade cadastrado para excluir.")
+    else:
+        st.dataframe(df_hist, use_container_width=True, hide_index=True)
+        
+        st.markdown("---")
+        
+        col_del1, col_del2 = st.columns(2)
+
+        with col_del1:
+            st.subheader("🗑️ Excluir Lançamento Específico")
+            id_para_excluir = st.number_input("Informe o ID do registro que deseja apagar", min_value=1, step=1)
+            
+            if st.button("❌ APAGAR ESTE REGISTRO", use_container_width=True):
+                conn = conectar()
+                cursor = conn.cursor()
+                cursor.execute("DELETE FROM produtividade WHERE id = ?", (int(id_para_excluir),))
+                linhas_afetadas = cursor.rowcount
+                conn.commit()
+                conn.close()
+
+                if linhas_afetadas > 0:
+                    st.success(f"✅ Registro com ID {id_para_excluir} excluído com sucesso!")
+                    st.rerun()
+                else:
+                    st.warning(f"⚠️ Nenhum registro encontrado com o ID {id_para_excluir}.")
+
+        with col_del2:
+            st.subheader("⚠️ Zona de Perigo (Limpeza Total)")
+            st.write("Atenção: Esta ação removerá **todos** os lançamentos salvos no banco de dados permanentemente.")
+            
+            confirmar_limpeza = st.checkbox("Estou ciente e quero limpar todo o histórico")
+            
+            if st.button("🚨 EXCLUIR TODO O HISTÓRICO", use_container_width=True):
+                if confirmar_limpeza:
+                    conn = conectar()
+                    conn.execute("DELETE FROM produtividade")
+                    conn.commit()
+                    conn.close()
+                    st.success("✅ Todo o histórico de produtividade foi apagado com sucesso!")
+                    st.rerun()
+                else:
+                    st.error("❌ Marque a caixa de confirmação acima para autorizar a limpeza total.")
 
 
 # =========================================================
