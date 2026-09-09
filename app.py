@@ -11,7 +11,7 @@ import json
 # =========================================================
 
 st.set_page_config(
-    page_title="PRODUCT",
+    page_title="PRODUCT | Dashboard Executivo",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -66,11 +66,10 @@ def criar_banco():
         )
     """)
 
-    # Migração automática caso a tabela antiga não tenha a coluna 'auditoria'
     try:
         cursor.execute("ALTER TABLE produtividade ADD COLUMN auditoria INTEGER DEFAULT 0")
     except sqlite3.OperationalError:
-        pass  # A coluna já existe
+        pass
 
     cursor.execute("SELECT COUNT(*) FROM configuracoes")
     quantidade = cursor.fetchone()[0]
@@ -135,14 +134,12 @@ def buscar_produtividade():
         df["sysvet_exito"] = pd.to_numeric(df["sysvet_exito"], errors="coerce").fillna(0).astype(int)
         df["faturado"] = pd.to_numeric(df["faturado"], errors="coerce").fillna(0).astype(int)
         
-        # Garante compatibilidade se a base antiga vier sem a coluna
         if "auditoria" not in df.columns:
             df["auditoria"] = 0
         else:
             df["auditoria"] = pd.to_numeric(df["auditoria"], errors="coerce").fillna(0).astype(int)
         
         df["total_sysvet"] = df["sysvet_erro"] + df["sysvet_exito"]
-        # Produtividade total agora soma também a Auditoria de Cadastros
         df["produtividade_total"] = df["sysvet_erro"] + df["sysvet_exito"] + df["faturado"] + df["auditoria"]
         
         df["taxa_exito"] = df.apply(
@@ -192,7 +189,6 @@ def restaurar_backup_json(json_str):
             cursor.execute("INSERT INTO colaboradores (id, nome) VALUES (?, ?)", (item.get("id"), item.get("nome")))
 
         for item in dados.get("produtividade", []):
-            # Compatibilidade de backup antigo sem a coluna auditoria
             auditoria_val = item.get("auditoria", 0)
             if auditoria_val is None:
                 auditoria_val = 0
@@ -221,7 +217,7 @@ def restaurar_backup_json(json_str):
 
 
 # =========================================================
-# ESTILIZAÇÃO VISUAL (MODO CLARO / NOTURNO)
+# DESIGN SYSTEM & UI PREMIUM (MODO CLARO E NOTURNO)
 # =========================================================
 
 if "modo_noturno" not in st.session_state:
@@ -230,33 +226,142 @@ if "modo_noturno" not in st.session_state:
 if not st.session_state.modo_noturno:
     st.markdown("""
     <style>
-    .stApp { background-color: #f4f7fb; color: #172033; }
-    [data-testid="stSidebar"] { background: linear-gradient(180deg, #0f172a 0%, #173b8f 100%); }
-    [data-testid="stSidebar"] * { color: white !important; }
-    h1 { color: #173b8f !important; font-weight: 800; }
-    h2, h3 { color: #1e3a8a !important; }
-    p, label { color: #263247; }
-    div[data-testid="stMetric"] { background: white; padding: 18px; border-radius: 15px; border: 1px solid #e1e7ef; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
-    div[data-testid="stMetricLabel"] { color: #64748b !important; }
-    div[data-testid="stMetricValue"] { color: #173b8f !important; font-weight: 800; }
-    .stButton > button, .stDownloadButton > button { border-radius: 10px; font-weight: 700; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+    }
+    .stApp { 
+        background-color: #f8fafc; 
+        color: #0f172a; 
+    }
+    [data-testid="stSidebar"] { 
+        background: linear-gradient(160deg, #0f172a 0%, #1e293b 100%); 
+        border-right: 1px solid #334155;
+    }
+    [data-testid="stSidebar"] * { 
+        color: #f1f5f9 !important; 
+    }
+    h1 { 
+        color: #0f172a !important; 
+        font-weight: 800; 
+        letter-spacing: -0.025em;
+    }
+    h2, h3 { 
+        color: #1e293b !important; 
+        font-weight: 700; 
+    }
+    p, label { 
+        color: #334155; 
+    }
+    /* Estilização moderna dos Cards KPI */
+    div[data-testid="stMetric"] { 
+        background: #ffffff; 
+        padding: 20px; 
+        border-radius: 16px; 
+        border: 1px solid #e2e8f0; 
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    div[data-testid="stMetric"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08);
+    }
+    div[data-testid="stMetricLabel"] { 
+        color: #64748b !important; 
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    div[data-testid="stMetricValue"] { 
+        color: #0284c7 !important; 
+        font-weight: 800; 
+        font-size: 1.8rem;
+    }
+    .stButton > button, .stDownloadButton > button { 
+        border-radius: 12px; 
+        font-weight: 600; 
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2);
+        transition: all 0.2s ease;
+    }
+    .stButton > button:hover {
+        background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+        box-shadow: 0 6px 15px rgba(2, 132, 199, 0.35);
+        color: white;
+    }
     </style>
     """, unsafe_allow_html=True)
 else:
     st.markdown("""
     <style>
-    .stApp { background-color: #0b1120; color: #e5e7eb; }
-    [data-testid="stHeader"] { background-color: #0b1120; }
-    [data-testid="stSidebar"] { background: linear-gradient(180deg, #020617 0%, #111827 100%); }
-    [data-testid="stSidebar"] * { color: #f8fafc !important; }
-    h1 { color: #60a5fa !important; font-weight: 800; }
-    h2, h3 { color: #93c5fd !important; }
-    p, label { color: #cbd5e1 !important; }
-    div[data-testid="stMetric"] { background-color: #111827 !important; padding: 18px; border-radius: 15px; border: 1px solid #263244; box-shadow: 0 5px 20px rgba(0,0,0,0.35); }
-    div[data-testid="stMetricLabel"] { color: #94a3b8 !important; }
-    div[data-testid="stMetricValue"] { color: #60a5fa !important; font-weight: 800; }
-    .stButton > button { border-radius: 10px; font-weight: 700; background-color: #1e40af; color: white; border: 1px solid #3b82f6; }
-    .stButton > button:hover { background-color: #2563eb; color: white; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+    }
+    .stApp { 
+        background-color: #030712; 
+        color: #f3f4f6; 
+    }
+    [data-testid="stHeader"] { 
+        background-color: #030712; 
+    }
+    [data-testid="stSidebar"] { 
+        background: linear-gradient(160deg, #020617 0%, #0f172a 100%); 
+        border-right: 1px solid #1e293b;
+    }
+    [data-testid="stSidebar"] * { 
+        color: #f8fafc !important; 
+    }
+    h1 { 
+        color: #38bdf8 !important; 
+        font-weight: 800; 
+        letter-spacing: -0.025em;
+    }
+    h2, h3 { 
+        color: #7dd3fc !important; 
+        font-weight: 700; 
+    }
+    p, label { 
+        color: #94a3b8 !important; 
+    }
+    /* Estilização moderna dos Cards KPI (Dark) */
+    div[data-testid="stMetric"] { 
+        background-color: #0f172a !important; 
+        padding: 20px; 
+        border-radius: 16px; 
+        border: 1px solid #1e293b; 
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+    div[data-testid="stMetricLabel"] { 
+        color: #94a3b8 !important; 
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    div[data-testid="stMetricValue"] { 
+        color: #38bdf8 !important; 
+        font-weight: 800; 
+        font-size: 1.8rem;
+    }
+    .stButton > button { 
+        border-radius: 12px; 
+        font-weight: 600; 
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); 
+        color: white; 
+        border: 1px solid #38bdf8;
+        box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
+    }
+    .stButton > button:hover { 
+        background: linear-gradient(135deg, #0369a1 0%, #075985 100%); 
+        color: white; 
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -274,20 +379,20 @@ if "usuario_logado" not in st.session_state:
 
 
 if not st.session_state.autenticado:
-    st.title("📊 PRODUCT")
-    st.caption("Sistema de Controle de Produtividade")
-    st.divider()
-
-    col1, col2, col3 = st.columns([1, 2, 1])
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 1.2, 1])
 
     with col2:
-        st.subheader("🔐 Acesso ao sistema")
-        
-        tipo_login = st.radio("Entrar como:", ["Administrador", "Colaborador"])
+        st.markdown("<h1 style='text-align: center;'>📊 PRODUCT</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #64748b;'>Plataforma Inteligente de Produtividade</p>", unsafe_allow_html=True)
+        st.divider()
+
+        tipo_login = st.radio("Entrar como:", ["Administrador", "Colaborador"], horizontal=True)
 
         if tipo_login == "Administrador":
             senha_adm = st.text_input("Senha do Administrador", type="password", key="senha_adm_input")
-            entrar = st.button("🔓 ENTRAR COMO ADMIN", use_container_width=True, type="primary")
+            st.markdown("<br>", unsafe_allow_html=True)
+            entrar = st.button("🔓 ENTRAR NO SISTEMA", use_container_width=True, type="primary")
 
             if entrar:
                 if senha_adm == buscar_senha():
@@ -300,11 +405,12 @@ if not st.session_state.autenticado:
         else:
             df_acessos = buscar_acessos()
             if df_acessos.empty:
-                st.warning("⚠️ Nenhum acesso de colaborador cadastrado pelo Administrador ainda.")
+                st.warning("⚠️ Nenhum acesso de colaborador cadastrado pelo Administrador.")
             else:
                 colab_escolhido = st.selectbox("Selecione seu nome", df_acessos["nome"].tolist())
                 senha_colab = st.text_input("Senha de acesso", type="password", key="senha_colab_input")
-                entrar_colab = st.button("🔓 ENTRAR COMO COLABORADOR", use_container_width=True, type="primary")
+                st.markdown("<br>", unsafe_allow_html=True)
+                entrar_colab = st.button("🔓 ENTRAR NO SISTEMA", use_container_width=True, type="primary")
 
                 if entrar_colab:
                     senha_correta = df_acessos[df_acessos["nome"] == colab_escolhido]["senha"].values[0]
@@ -324,7 +430,8 @@ if not st.session_state.autenticado:
 # =========================================================
 
 st.sidebar.markdown("# 📊 PRODUCT")
-st.sidebar.caption(f"Logado como: **{st.session_state.usuario_logado}** ({st.session_state.perfil.upper()})")
+st.sidebar.markdown(f"👤 **{st.session_state.usuario_logado}**")
+st.sidebar.caption(f"Perfil: {st.session_state.perfil.upper()}")
 st.sidebar.divider()
 
 if st.session_state.modo_noturno:
@@ -354,11 +461,11 @@ else:
         "📋 Histórico"
     ]
 
-pagina = st.sidebar.radio("MENU", paginas)
+pagina = st.sidebar.radio("MENU DE NAVEGAÇÃO", paginas)
 
 st.sidebar.divider()
 
-if st.sidebar.button("🚪 SAIR", use_container_width=True):
+if st.sidebar.button("🚪 ENCERRAR SESSÃO", use_container_width=True):
     st.session_state.autenticado = False
     st.session_state.perfil = None
     st.session_state.usuario_logado = None
@@ -371,7 +478,7 @@ if st.sidebar.button("🚪 SAIR", use_container_width=True):
 
 if pagina == "📈 Dashboard" and st.session_state.perfil == "admin":
     st.title("📈 Dashboard Executivo")
-    st.caption("Painel analítico de desempenho e métricas da equipe")
+    st.caption("Visão estratégica e analítica integrada da produtividade da equipe")
 
     df = buscar_produtividade()
 
@@ -381,19 +488,19 @@ if pagina == "📈 Dashboard" and st.session_state.perfil == "admin":
 
     st.divider()
 
-    # Filtros do Dashboard
+    # Filtros do Dashboard em layout limpo
     with st.container():
         col_f1, col_f2, col_f3 = st.columns([2, 2, 1])
         lista_colaboradores = sorted(df["colaborador"].unique().tolist())
 
         with col_f1:
-            colaborador_filtro = st.selectbox("👤 Filtrar por Colaborador", ["Todos os colaboradores"] + lista_colaboradores)
+            colaborador_filtro = st.selectbox("👤 Colaborador", ["Todos os colaboradores"] + lista_colaboradores)
 
         data_min = df["data"].min().date()
         data_max = df["data"].max().date()
 
         with col_f2:
-            periodo = st.date_input("📅 Intervalo de Datas", value=(data_min, data_max), min_value=data_min, max_value=data_max)
+            periodo = st.date_input("📅 Período de Análise", value=(data_min, data_max), min_value=data_min, max_value=data_max)
 
         with col_f3:
             st.write("")
@@ -401,7 +508,6 @@ if pagina == "📈 Dashboard" and st.session_state.perfil == "admin":
             if st.button("🔄 Atualizar", use_container_width=True):
                 st.rerun()
 
-    # Aplicação dos Filtros
     if isinstance(periodo, tuple) and len(periodo) == 2:
         inicio, fim = periodo
         df_filtrado = df[(df["data"].dt.date >= inicio) & (df["data"].dt.date <= fim)].copy()
@@ -415,7 +521,7 @@ if pagina == "📈 Dashboard" and st.session_state.perfil == "admin":
         st.warning("Não existem registros para os filtros selecionados.")
         st.stop()
 
-    # Cálculos dos KPIs
+    # KPIs
     erro = int(df_filtrado["sysvet_erro"].sum())
     exito = int(df_filtrado["sysvet_exito"].sum())
     faturado = int(df_filtrado["faturado"].sum())
@@ -424,22 +530,24 @@ if pagina == "📈 Dashboard" and st.session_state.perfil == "admin":
     produtividade = erro + exito + faturado + auditoria
     taxa_media = (exito / total_sysvet * 100) if total_sysvet > 0 else 0
 
-    st.markdown("### 📌 Indicadores Gerais")
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("### 📌 Indicadores Chave de Desempenho (KPIs)")
+    
     c1, c2, c3, c4, c5, c6 = st.columns(6)
     c1.metric("❌ SYSVET Erro", f"{erro:,}")
     c2.metric("✅ SYSVET Êxito", f"{exito:,}")
     c3.metric("📁 Faturado", f"{faturado:,}")
     c4.metric("🔍 Auditoria", f"{auditoria:,}")
-    c5.metric("📊 Produtividade Total", f"{produtividade:,}")
-    c6.metric("🎯 Taxa de Êxito", f"{taxa_media:.1f}%")
+    c5.metric("📊 Total Geral", f"{produtividade:,}")
+    c6.metric("🎯 Taxa Êxito", f"{taxa_media:.1f}%")
 
     st.divider()
 
-    # Gráficos da Linha 1
+    # Gráficos Linha 1
     col_g1, col_g2 = st.columns(2)
 
     with col_g1:
-        st.subheader("🏆 Ranking de Produtividade por Colaborador")
+        st.subheader("🏆 Ranking de Produtividade")
         resumo_colab = df_filtrado.groupby("colaborador")["produtividade_total"].sum().reset_index()
         resumo_colab = resumo_colab.sort_values("produtividade_total", ascending=True)
 
@@ -452,22 +560,22 @@ if pagina == "📈 Dashboard" and st.session_state.perfil == "admin":
             color="produtividade_total",
             color_continuous_scale="Blues"
         )
-        fig_bar.update_traces(textposition="outside")
+        fig_bar.update_traces(textposition="outside", marker_line_width=0, marker_cornerradius=6)
         fig_bar.update_layout(
-            xaxis_title="Total de Produtividade", 
+            xaxis_title="", 
             yaxis_title="", 
             coloraxis_showscale=False, 
             plot_bgcolor="rgba(0,0,0,0)", 
             paper_bgcolor="rgba(0,0,0,0)",
-            margin=dict(l=10, r=10, t=10, b=10),
+            margin=dict(l=10, r=20, t=10, b=10),
             height=380
         )
         st.plotly_chart(fig_bar, use_container_width=True)
 
     with col_g2:
-        st.subheader("🍩 Distribuição Geral de Atividades")
+        st.subheader("🍩 Distribuição por Categoria")
         df_pizza = pd.DataFrame({
-            "Categoria": ["SYSVET Erro", "SYSVET Êxito", "Faturado", "Auditoria de Cadastros"],
+            "Categoria": ["SYSVET Erro", "SYSVET Êxito", "Faturado", "Auditoria"],
             "Quantidade": [erro, exito, faturado, auditoria]
         })
         
@@ -475,30 +583,29 @@ if pagina == "📈 Dashboard" and st.session_state.perfil == "admin":
             df_pizza, 
             names="Categoria", 
             values="Quantidade", 
-            hole=0.5,
+            hole=0.55,
             color="Categoria",
             color_discrete_map={
                 "SYSVET Erro": "#ef4444", 
                 "SYSVET Êxito": "#22c55e", 
                 "Faturado": "#3b82f6",
-                "Auditoria de Cadastros": "#a855f7"
+                "Auditoria": "#a855f7"
             }
         )
+        fig_pie.update_traces(textinfo="percent+label", pull=[0.03, 0.03, 0.03, 0.03])
         fig_pie.update_layout(
             plot_bgcolor="rgba(0,0,0,0)", 
             paper_bgcolor="rgba(0,0,0,0)",
             margin=dict(l=10, r=10, t=10, b=10),
             height=380,
-            legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5)
+            showlegend=False
         )
         st.plotly_chart(fig_pie, use_container_width=True)
 
     st.divider()
 
-    # =========================================================
-    # GRÁFICO DE LINHA ESTILO MERCADO FINANCEIRO / INVESTIMENTOS
-    # =========================================================
-    st.subheader("📈 Evolução Diária da Produtividade (Estilo Investimento)")
+    # Gráfico de Linha Estilo Financeiro / Investimento
+    st.subheader("📈 Evolução Diária da Produtividade")
     df_tempo = df_filtrado.groupby("data")["produtividade_total"].sum().reset_index()
     df_tempo = df_tempo.sort_values("data")
     df_tempo["data_str"] = df_tempo["data"].dt.strftime("%d/%m/%Y")
@@ -509,7 +616,7 @@ if pagina == "📈 Dashboard" and st.session_state.perfil == "admin":
         tendencia_alta = True
 
     cor_linha = "#10b981" if tendencia_alta else "#ef4444"
-    cor_preenchimento = "rgba(16, 185, 129, 0.12)" if tendencia_alta else "rgba(239, 68, 68, 0.12)"
+    cor_preenchimento = "rgba(16, 185, 129, 0.1)" if tendencia_alta else "rgba(239, 68, 68, 0.1)"
 
     fig_inv = px.line(
         df_tempo, 
@@ -527,26 +634,14 @@ if pagina == "📈 Dashboard" and st.session_state.perfil == "admin":
 
     fig_inv.update_layout(
         xaxis_title="",
-        yaxis_title="Volume / Produtividade",
+        yaxis_title="Volume",
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=10, r=10, t=20, b=10),
         height=380,
         hovermode="x unified",
-        xaxis=dict(
-            showline=True, 
-            linewidth=1, 
-            linecolor='rgba(150, 150, 150, 0.3)',
-            tickfont=dict(size=11)
-        ),
-        yaxis=dict(
-            showline=True, 
-            linewidth=1, 
-            linecolor='rgba(150, 150, 150, 0.3)',
-            gridwidth=1, 
-            gridcolor="rgba(200, 200, 200, 0.12)",
-            tickfont=dict(size=11)
-        )
+        xaxis=dict(showline=False, gridcolor='rgba(150, 150, 150, 0.1)'),
+        yaxis=dict(showline=False, gridcolor='rgba(150, 150, 150, 0.1)')
     )
 
     st.plotly_chart(fig_inv, use_container_width=True)
@@ -557,16 +652,16 @@ if pagina == "📈 Dashboard" and st.session_state.perfil == "admin":
 # =========================================================
 
 elif pagina == "📝 Lançar produtividade":
-    st.title("📝 Lançar produtividade")
+    st.title("📝 Lançar Produtividade")
+    st.caption("Insira os dados referentes às atividades realizadas")
 
     colaboradores = buscar_colaboradores()
 
     if colaboradores.empty:
-        st.warning("⚠️ Nenhum colaborador cadastrado.")
-        st.info("O Administrador precisa cadastrar colaboradores no menu correspondente.")
+        st.warning("⚠️ Nenhum colaborador cadastrado no sistema.")
     else:
         with st.form("form_produtividade"):
-            data_lancamento = st.date_input("📅 Data", value=date.today())
+            data_lancamento = st.date_input("📅 Data do Registro", value=date.today())
 
             if st.session_state.perfil == "admin":
                 colaborador = st.selectbox("👤 Colaborador", colaboradores["nome"].tolist())
@@ -574,20 +669,22 @@ elif pagina == "📝 Lançar produtividade":
                 colaborador = st.session_state.usuario_logado
                 st.info(f"👤 Lançando em nome de: **{colaborador}**")
 
+            st.markdown("<br>", unsafe_allow_html=True)
             col1, col2, col3, col4 = st.columns(4)
             with col1:
-                erro = st.number_input("❌ SYSVET com erro", min_value=0, value=0, step=1)
+                erro = st.number_input("❌ SYSVET Erro", min_value=0, value=0, step=1)
             with col2:
-                exito = st.number_input("✅ SYSVET com êxito", min_value=0, value=0, step=1)
+                exito = st.number_input("✅ SYSVET Êxito", min_value=0, value=0, step=1)
             with col3:
                 faturado = st.number_input("📁 Faturado", min_value=0, value=0, step=1)
             with col4:
-                auditoria = st.number_input("🔍 Auditoria cadastros", min_value=0, value=0, step=1)
+                auditoria = st.number_input("🔍 Auditoria", min_value=0, value=0, step=1)
 
             total = erro + exito + faturado + auditoria
-            st.info(f"📊 Produtividade total: {total}")
+            st.markdown(f"### 📊 Total calculado: `{total}`")
+            st.markdown("<br>", unsafe_allow_html=True)
 
-            salvar = st.form_submit_button("💾 SALVAR PRODUTIVIDADE", use_container_width=True)
+            salvar = st.form_submit_button("💾 SALVAR REGISTRO", use_container_width=True)
 
             if salvar:
                 conn = conectar()
@@ -605,7 +702,7 @@ elif pagina == "📝 Lançar produtividade":
 
 
 # =========================================================
-# COLABORADORES (Com Cadastro, Listagem, Alerta de Lançamentos e Exclusão)
+# COLABORADORES
 # =========================================================
 
 elif pagina == "👥 Colaboradores" and st.session_state.perfil == "admin":
@@ -613,8 +710,8 @@ elif pagina == "👥 Colaboradores" and st.session_state.perfil == "admin":
 
     with st.form("form_colaborador"):
         st.subheader("➕ Cadastrar Novo Colaborador")
-        nome = st.text_input("Nome do colaborador")
-        cadastrar = st.form_submit_button("CADASTRAR COLABORADOR", use_container_width=True)
+        nome = st.text_input("Nome Completo")
+        cadastrar = st.form_submit_button("CADASTRAR", use_container_width=True)
 
         if cadastrar:
             if not nome.strip():
@@ -631,7 +728,7 @@ elif pagina == "👥 Colaboradores" and st.session_state.perfil == "admin":
                     st.error("⚠️ Esse colaborador já está cadastrado.")
 
     st.divider()
-    st.subheader("📋 Lista e Exclusão de Colaboradores")
+    st.subheader("📋 Lista de Colaboradores")
     
     colaboradores = buscar_colaboradores()
     if colaboradores.empty:
@@ -641,54 +738,46 @@ elif pagina == "👥 Colaboradores" and st.session_state.perfil == "admin":
 
         st.divider()
         st.subheader("🗑️ Excluir Colaborador")
-        st.warning("⚠️ Atenção: Ao excluir um colaborador, o acesso dele também será removido.")
+        colab_para_excluir = st.selectbox("Selecione para exclusão", colaboradores["nome"].tolist(), key="select_excluir_colab")
 
-        colab_para_excluir = st.selectbox("Selecione o colaborador que deseja excluir", colaboradores["nome"].tolist(), key="select_excluir_colab")
-
-        # Verificação inteligente de lançamentos pendentes
         df_prod = buscar_produtividade()
         lancamentos_colab = 0
         if not df_prod.empty:
             lancamentos_colab = len(df_prod[df_prod["colaborador"] == colab_para_excluir])
 
         if lancamentos_colab > 0:
-            st.info(f"ℹ️ Este colaborador possui **{lancamentos_colab} registro(s)** de produtividade no histórico. O histórico será mantido com o nome dele por segurança.")
-        else:
-            st.info("ℹ️ Este colaborador não possui registros de produtividade cadastrados.")
+            st.info(f"ℹ️ Este colaborador possui **{lancamentos_colab} registro(s)** no histórico.")
 
         confirmar_exclusao = st.checkbox("Confirmo a exclusão deste colaborador.", key="check_excluir_colab")
 
         if confirmar_exclusao:
-            if st.button("🗑️ EXCLUIR COLABORADOR SELECIONADO", type="primary", use_container_width=True):
+            if st.button("🗑️ EXCLUIR SELECIONADO", type="primary", use_container_width=True):
                 conn = conectar()
                 cursor = conn.cursor()
-                
                 cursor.execute("DELETE FROM colaboradores WHERE nome = ?", (colab_para_excluir,))
                 cursor.execute("DELETE FROM acessos_colaboradores WHERE nome = ?", (colab_para_excluir,))
-                
                 conn.commit()
                 conn.close()
-                st.success(f"✅ O colaborador '{colab_para_excluir}' foi excluído com sucesso!")
+                st.success(f"✅ Colaborador removido!")
                 st.rerun()
 
 
 # =========================================================
-# GERENCIAR ACESSOS DE COLABORADORES (Somente Admin)
+# GERENCIAR ACESSOS
 # =========================================================
 
 elif pagina == "🔑 Gerenciar Acessos" and st.session_state.perfil == "admin":
-    st.title("🔑 Gerenciar Acessos dos Colaboradores")
-    st.caption("Cadastre a senha para que seus colaboradores possam entrar e registrar a própria produtividade.")
+    st.title("🔑 Acessos dos Colaboradores")
 
     colaboradores_disp = buscar_colaboradores()
 
     if colaboradores_disp.empty:
-        st.warning("⚠️ Cadastre colaboradores primeiro no menu 'Colaboradores'.")
+        st.warning("⚠️ Cadastre colaboradores primeiro.")
     else:
         with st.form("form_acesso"):
-            colab_nome = st.selectbox("Selecione o Colaborador", colaboradores_disp["nome"].tolist())
-            senha_colab = st.text_input("Senha de acesso para este colaborador", type="password")
-            salvar_acesso = st.form_submit_button("💾 SALVAR/ATUALIZAR ACESSO", use_container_width=True)
+            colab_nome = st.selectbox("Colaborador", colaboradores_disp["nome"].tolist())
+            senha_colab = st.text_input("Senha de Acesso", type="password")
+            salvar_acesso = st.form_submit_button("💾 SALVAR ACESSO", use_container_width=True)
 
             if salvar_acesso:
                 if not senha_colab.strip():
@@ -706,15 +795,13 @@ elif pagina == "🔑 Gerenciar Acessos" and st.session_state.perfil == "admin":
 
                     conn.commit()
                     conn.close()
-                    st.success(f"✅ Acesso configurado com sucesso para {colab_nome}!")
+                    st.success(f"✅ Acesso salvo para {colab_nome}!")
                     st.rerun()
 
     st.divider()
-    st.subheader("📋 Acessos Cadastrados")
+    st.subheader("📋 Acessos Ativos")
     df_acessos = buscar_acessos()
-    if df_acessos.empty:
-        st.info("Nenhum acesso configurado.")
-    else:
+    if not df_acessos.empty:
         df_exibicao = df_acessos.copy()
         df_exibicao["senha"] = "••••••"
         st.dataframe(df_exibicao[["id", "nome", "senha"]], use_container_width=True, hide_index=True)
@@ -725,7 +812,7 @@ elif pagina == "🔑 Gerenciar Acessos" and st.session_state.perfil == "admin":
 # =========================================================
 
 elif pagina == "📋 Histórico":
-    st.title("📋 Histórico de produtividade")
+    st.title("📋 Histórico de Lançamentos")
 
     df = buscar_produtividade()
 
@@ -735,13 +822,12 @@ elif pagina == "📋 Histórico":
     if df.empty:
         st.info("Nenhum lançamento encontrado.")
     else:
-        # Métricas rápidas no topo do histórico
         total_lancamentos = len(df)
         soma_prod_hist = int(df["produtividade_total"].sum())
         
         m1, m2 = st.columns(2)
         m1.metric("📦 Total de Registros", f"{total_lancamentos:,}")
-        m2.metric("📊 Soma Total da Produtividade", f"{soma_prod_hist:,}")
+        m2.metric("📊 Volume Total", f"{soma_prod_hist:,}")
         st.divider()
 
         visualizar = df[
@@ -759,64 +845,51 @@ elif pagina == "📋 Histórico":
 
         visualizar["data"] = visualizar["data"].dt.strftime("%d/%m/%Y")
         visualizar.columns = [
-            "ID",
-            "Data",
-            "Colaborador",
-            "SYSVET Erro",
-            "SYSVET Êxito",
-            "Faturado",
-            "Auditoria",
-            "Produtividade Total"
+            "ID", "Data", "Colaborador", "SYSVET Erro", "SYSVET Êxito", "Faturado", "Auditoria", "Total"
         ]
 
         st.dataframe(visualizar, use_container_width=True, hide_index=True)
 
         if st.session_state.perfil == "admin":
             st.divider()
-            st.subheader("🗑️ Excluir registros de uma data")
-            st.warning("⚠️ Atenção: esta função excluirá TODOS os lançamentos da data selecionada.")
-
-            data_exclusao = st.date_input("📅 Selecione a data que deseja excluir", value=date.today(), key="data_exclusao")
+            st.subheader("🗑️ Excluir Registros por Data")
+            data_exclusao = st.date_input("📅 Data", value=date.today(), key="data_exclusao")
 
             registros_data = df[df["data"].dt.date == data_exclusao].copy()
 
             if not registros_data.empty:
-                total_data = int(registros_data["produtividade_total"].sum())
-                st.error(f"Existem {len(registros_data)} lançamento(s) nessa data, totalizando {total_data} de produtividade.")
-
-                confirmar_data = st.checkbox("✅ Confirmo que quero excluir TODOS os registros desta data.", key="confirmar_exclusao_data")
+                st.warning(f"Existem {len(registros_data)} registro(s) nesta data.")
+                confirmar_data = st.checkbox("Confirmo a exclusão de todos os registros desta data.", key="confirmar_exclusao_data")
 
                 if confirmar_data:
-                    if st.button("🗑️ EXCLUIR TODOS OS REGISTROS DESTA DATA", type="primary", use_container_width=True, key="botao_excluir_data"):
+                    if st.button("🗑️ EXCLUIR REGISTROS DA DATA", type="primary", use_container_width=True):
                         conn = conectar()
                         cursor = conn.cursor()
                         cursor.execute("DELETE FROM produtividade WHERE data = ?", (str(data_exclusao),))
-                        quantidade_excluida = cursor.rowcount
                         conn.commit()
                         conn.close()
-                        st.success(f"✅ {quantidade_excluida} registro(s) foram excluídos com sucesso.")
+                        st.success("✅ Registros excluídos com sucesso.")
                         st.rerun()
 
 
 # =========================================================
-# EXPORTAR / BACKUP (Somente Admin)
+# EXPORTAR / BACKUP
 # =========================================================
 
 elif pagina == "📥 Exportar / Backup" and st.session_state.perfil == "admin":
-    st.title("📥 Exportar Dados e Backup do Sistema")
-    st.caption("Evite perder seus dados caso o servidor reinicie: faça download do backup regularmente.")
+    st.title("📥 Exportação e Backup")
 
     df = buscar_produtividade()
 
     if not df.empty:
-        st.subheader("📊 Exportar para Excel (.xlsx)")
+        st.subheader("📊 Exportar para Excel")
         output = BytesIO()
         with pd.ExcelWriter(output, engine="openpyxl") as writer:
             df.to_excel(writer, index=False, sheet_name="Produtividade")
         processed_data = output.getvalue()
 
         st.download_button(
-            label="📥 Baixar Relatório em Excel",
+            label="📥 Baixar Planilha Excel (.xlsx)",
             data=processed_data,
             file_name=f"produtividade_{date.today()}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -824,12 +897,10 @@ elif pagina == "📥 Exportar / Backup" and st.session_state.perfil == "admin":
         )
 
     st.divider()
-    st.subheader("💾 Backup Completo do Sistema (JSON)")
-    st.write("Baixe um arquivo de segurança contendo todos os cadastros, senhas e lançamentos.")
-
+    st.subheader("💾 Backup Completo (JSON)")
     json_backup = gerar_backup_json()
     st.download_button(
-        label="📥 Baixar Arquivo de Backup (.json)",
+        label="📥 Baixar Backup do Sistema (.json)",
         data=json_backup,
         file_name=f"backup_sistema_{date.today()}.json",
         mime="application/json",
@@ -837,13 +908,11 @@ elif pagina == "📥 Exportar / Backup" and st.session_state.perfil == "admin":
     )
 
     st.divider()
-    st.subheader("♻️ Restaurar Sistema via Backup")
-    st.write("Caso o aplicativo tenha reiniciado do zero, envie o arquivo JSON de backup gerado anteriormente para recuperar todos os seus dados instantaneamente.")
-
+    st.subheader("♻️ Restaurar Sistema")
     arquivo_submetido = st.file_uploader("Enviar arquivo de backup (.json)", type=["json"])
     if arquivo_submetido is not None:
         conteudo_json = arquivo_submetido.getvalue().decode("utf-8")
-        if st.button("🔄 RESTAURAR DADOS AGORA", type="primary", use_container_width=True):
+        if st.button("🔄 RESTAURAR DADOS", type="primary", use_container_width=True):
             sucesso, mensagem = restaurar_backup_json(conteudo_json)
             if sucesso:
                 st.success(mensagem)
@@ -853,18 +922,18 @@ elif pagina == "📥 Exportar / Backup" and st.session_state.perfil == "admin":
 
 
 # =========================================================
-# ALTERAR SENHA (Somente Admin)
+# ALTERAR SENHA
 # =========================================================
 
 elif pagina == "🔐 Alterar senha" and st.session_state.perfil == "admin":
-    st.title("🔐 Alterar senha do Administrador")
+    st.title("🔐 Segurança")
 
     with st.form("form_senha"):
-        senha_atual = st.text_input("Senha atual", type="password")
-        nova_senha = st.text_input("Nova senha", type="password")
-        confirma_senha = st.text_input("Confirme a nova senha", type="password")
+        senha_atual = st.text_input("Senha Atual", type="password")
+        nova_senha = st.text_input("Nova Senha", type="password")
+        confirma_senha = st.text_input("Confirmar Nova Senha", type="password")
 
-        atualizar = st.form_submit_button("🔒 ALTERAR SENHA", use_container_width=True)
+        atualizar = st.form_submit_button("🔒 ATUALIZAR SENHA", use_container_width=True)
 
         if atualizar:
             if senha_atual != buscar_senha():
@@ -872,7 +941,7 @@ elif pagina == "🔐 Alterar senha" and st.session_state.perfil == "admin":
             elif not nova_senha.strip():
                 st.error("❌ A nova senha não pode estar em branco.")
             elif nova_senha != confirma_senha:
-                st.error("❌ As senhas novas não coincidem.")
+                st.error("❌ As senhas não coincidem.")
             else:
                 alterar_senha(nova_senha)
                 st.success("✅ Senha alterada com sucesso!")
