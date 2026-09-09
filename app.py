@@ -456,44 +456,64 @@ if pagina == "📈 Dashboard" and st.session_state.perfil == "admin":
 
     st.divider()
 
-    # Gráfico de Linha Temporal Aprimorado para Apresentação (Linha 2)
-    st.subheader("📈 Evolução Diária da Produtividade")
+    # =========================================================
+    # GRÁFICO DE LINHA ESTILO MERCADO FINANCEIRO / INVESTIMENTOS
+    # =========================================================
+    st.subheader("📈 Evolução Diária da Produtividade (Estilo Investimento)")
     df_tempo = df_filtrado.groupby("data")["produtividade_total"].sum().reset_index()
     df_tempo = df_tempo.sort_values("data")
     df_tempo["data_str"] = df_tempo["data"].dt.strftime("%d/%m/%Y")
 
-    # Gráfico de Área Suave com Efeito Degradê e Destaque Visual Executivo
-    fig_line = px.area(
+    # Identificando tendência financeira (Alta ou Baixa comparando início e fim do período)
+    if len(df_tempo) >= 2:
+        tendencia_alta = df_tempo["produtividade_total"].iloc[-1] >= df_tempo["produtividade_total"].iloc[0]
+    else:
+        tendencia_alta = True
+
+    # Cores estilo Home Broker (Verde Esmeralda para alta positiva, Azul Corporativo clássico ou Vermelho se queda)
+    cor_linha = "#10b981" if tendencia_alta else "#ef4444"
+    cor_preenchimento = "rgba(16, 185, 129, 0.12)" if tendencia_alta else "rgba(239, 68, 68, 0.12)"
+
+    fig_inv = px.line(
         df_tempo, 
         x="data_str", 
-        y="produtividade_total", 
-        markers=True,
-        line_shape="spline"
+        y="produtividade_total",
+        markers=True
     )
-    
-    # Estilização profissional avançada para apresentações
-    fig_line.update_traces(
-        line=dict(color="#3b82f6", width=4),
-        marker=dict(size=9, color="#1e3a8a", line=dict(color="#ffffff", width=2)),
+
+    # Estilização exata de gráfico de ações/investimentos (spline financeiro)
+    fig_inv.update_traces(
+        line=dict(color=cor_linha, width=3.5, shape="spline"),
+        marker=dict(size=8, color=cor_linha, line=dict(color="#ffffff", width=2)),
         fill='tozeroy',
-        fillcolor='rgba(59, 130, 246, 0.15)'
+        fillcolor=cor_preenchimento
     )
-    
-    fig_line.update_layout(
-        xaxis_title="Data do Registro",
-        yaxis_title="Total Produtividade",
+
+    fig_inv.update_layout(
+        xaxis_title="",
+        yaxis_title="Volume / Produtividade",
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=10, r=10, t=20, b=10),
         height=380,
-        hovermode="x unified"
+        hovermode="x unified",
+        xaxis=dict(
+            showline=True, 
+            linewidth=1, 
+            linecolor='rgba(150, 150, 150, 0.3)',
+            tickfont=dict(size=11)
+        ),
+        yaxis=dict(
+            showline=True, 
+            linewidth=1, 
+            linecolor='rgba(150, 150, 150, 0.3)',
+            gridwidth=1, 
+            gridcolor="rgba(200, 200, 200, 0.12)",
+            tickfont=dict(size=11)
+        )
     )
-    
-    # Grid sutil para facilitar a leitura visual em projetores/telas grandes
-    fig_line.update_xaxes(showgrid=True, gridwidth=1, gridcolor="rgba(200, 200, 200, 0.15)")
-    fig_line.update_yaxes(showgrid=True, gridwidth=1, gridcolor="rgba(200, 200, 200, 0.15)")
 
-    st.plotly_chart(fig_line, use_container_width=True)
+    st.plotly_chart(fig_inv, use_container_width=True)
 
 
 # =========================================================
