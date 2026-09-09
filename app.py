@@ -334,12 +334,12 @@ if st.sidebar.button("🚪 SAIR", use_container_width=True):
 
 
 # =========================================================
-# DASHBOARD POR MEIO DE CADASTRO (Somente Admin)
+# DASHBOARD REFORMULADO (Somente Admin)
 # =========================================================
 
 if pagina == "📈 Dashboard" and st.session_state.perfil == "admin":
-    st.title("📈 Dashboard por Meio de Cadastro")
-    st.caption("Acompanhamento detalhado segmentado por tipo de lançamento (SYSVET Erro, Êxito e Faturamento)")
+    st.title("📈 Dashboard Executivo")
+    st.caption("Painel analítico de desempenho e métricas da equipe")
 
     df = buscar_produtividade()
 
@@ -391,107 +391,94 @@ if pagina == "📈 Dashboard" and st.session_state.perfil == "admin":
     produtividade = erro + exito + faturado
     taxa_media = (exito / total_sysvet * 100) if total_sysvet > 0 else 0
 
-    st.markdown("### 📌 Indicadores Gerais por Meio")
+    st.markdown("### 📌 Indicadores Gerais")
     c1, c2, c3, c4, c5 = st.columns(5)
     c1.metric("❌ SYSVET Erro", f"{erro:,}")
     c2.metric("✅ SYSVET Êxito", f"{exito:,}")
     c3.metric("📁 Faturado", f"{faturado:,}")
-    c4.metric("📊 Total Geral", f"{produtividade:,}")
+    c4.metric("📊 Produtividade Total", f"{produtividade:,}")
     c5.metric("🎯 Taxa de Êxito", f"{taxa_media:.1f}%")
 
     st.divider()
-
-    # Transformação dos dados para formato longo (cada linha representa um meio de cadastro)
-    df_melted = df_filtrado.melt(
-        id_vars=["id", "data", "colaborador"],
-        value_vars=["sysvet_erro", "sysvet_exito", "faturado"],
-        var_name="Meio de Cadastro",
-        value_name="Quantidade"
-    )
-
-    # Renomeando de forma elegante para exibição
-    mapa_nomes = {
-        "sysvet_erro": "SYSVET Erro",
-        "sysvet_exito": "SYSVET Êxito",
-        "faturado": "Faturado"
-    }
-    df_melted["Meio de Cadastro"] = df_melted["Meio de Cadastro"].map(mapa_nomes)
 
     # Gráficos da Linha 1
     col_g1, col_g2 = st.columns(2)
 
     with col_g1:
-        st.subheader("📊 Volume Total por Meio de Cadastro")
-        resumo_meios = df_melted.groupby("Meio de Cadastro")["Quantidade"].sum().reset_index()
+        st.subheader("🏆 Ranking de Produtividade por Colaborador")
+        resumo_colab = df_filtrado.groupby("colaborador")["produtividade_total"].sum().reset_index()
+        resumo_colab = resumo_colab.sort_values("produtividade_total", ascending=True)
 
-        fig_bar_meio = px.bar(
-            resumo_meios,
-            x="Meio de Cadastro",
-            y="Quantidade",
-            text="Quantidade",
-            color="Meio de Cadastro",
-            color_discrete_map={"SYSVET Erro": "#ef4444", "SYSVET Êxito": "#22c55e", "Faturado": "#3b82f6"}
+        fig_bar = px.bar(
+            resumo_colab, 
+            x="produtividade_total", 
+            y="colaborador", 
+            orientation="h",
+            text="produtividade_total",
+            color="produtividade_total",
+            color_continuous_scale="Blues"
         )
-        fig_bar_meio.update_traces(textposition="outside")
-        fig_bar_meio.update_layout(
-            xaxis_title="",
-            yaxis_title="Quantidade Total",
-            coloraxis_showscale=False,
-            plot_bgcolor="rgba(0,0,0,0)",
+        fig_bar.update_traces(textposition="outside")
+        fig_bar.update_layout(
+            xaxis_title="Total de Produtividade", 
+            yaxis_title="", 
+            coloraxis_showscale=False, 
+            plot_bgcolor="rgba(0,0,0,0)", 
             paper_bgcolor="rgba(0,0,0,0)",
             margin=dict(l=10, r=10, t=10, b=10),
-            height=380,
-            showlegend=False
+            height=380
         )
-        st.plotly_chart(fig_bar_meio, use_container_width=True)
+        st.plotly_chart(fig_bar, use_container_width=True)
 
     with col_g2:
-        st.subheader("👥 Produtividade por Colaborador e Meio")
-        fig_group_bar = px.bar(
-            df_melted,
-            x="colaborador",
-            y="Quantidade",
-            color="Meio de Cadastro",
-            barmode="group",
+        st.subheader("🍩 Distribuição Geral de Atividades")
+        df_pizza = pd.DataFrame({
+            "Categoria": ["SYSVET Erro", "SYSVET Êxito", "Faturado"],
+            "Quantidade": [erro, exito, faturado]
+        })
+        
+        fig_pie = px.pie(
+            df_pizza, 
+            names="Categoria", 
+            values="Quantidade", 
+            hole=0.5,
+            color="Categoria",
             color_discrete_map={"SYSVET Erro": "#ef4444", "SYSVET Êxito": "#22c55e", "Faturado": "#3b82f6"}
         )
-        fig_group_bar.update_layout(
-            xaxis_title="Colaborador",
-            yaxis_title="Quantidade",
-            plot_bgcolor="rgba(0,0,0,0)",
+        fig_pie.update_layout(
+            plot_bgcolor="rgba(0,0,0,0)", 
             paper_bgcolor="rgba(0,0,0,0)",
             margin=dict(l=10, r=10, t=10, b=10),
             height=380,
-            legend_title="Meio de Cadastro"
+            legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5)
         )
-        st.plotly_chart(fig_group_bar, use_container_width=True)
+        st.plotly_chart(fig_pie, use_container_width=True)
 
     st.divider()
 
-    # Gráfico de Linha Temporal Separado por Meio (Linha 2)
-    st.subheader("📈 Evolução Diária Dividida por Meio de Cadastro")
-    df_tempo_meio = df_melted.groupby(["data", "Meio de Cadastro"])["Quantidade"].sum().reset_index()
-    df_tempo_meio = df_tempo_meio.sort_values("data")
-    df_tempo_meio["data_str"] = df_tempo_meio["data"].dt.strftime("%d/%m/%Y")
+    # Gráfico de Linha Temporal (Linha 2)
+    st.subheader("📈 Evolução Diária da Produtividade")
+    df_tempo = df_filtrado.groupby("data")["produtividade_total"].sum().reset_index()
+    df_tempo = df_tempo.sort_values("data")
+    df_tempo["data_str"] = df_tempo["data"].dt.strftime("%d/%m/%Y")
 
-    fig_line_meio = px.line(
-        df_tempo_meio,
-        x="data_str",
-        y="Quantidade",
-        color="Meio de Cadastro",
+    fig_line = px.line(
+        df_tempo, 
+        x="data_str", 
+        y="produtividade_total", 
         markers=True,
-        color_discrete_map={"SYSVET Erro": "#ef4444", "SYSVET Êxito": "#22c55e", "Faturado": "#3b82f6"}
+        line_shape="spline"
     )
-    fig_line_meio.update_layout(
+    fig_line.update_traces(line_color="#2563eb", line_width=3, marker_size=8)
+    fig_line.update_layout(
         xaxis_title="Data",
-        yaxis_title="Quantidade",
+        yaxis_title="Produtividade",
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=10, r=10, t=20, b=10),
-        height=380,
-        legend_title="Meio de Cadastro"
+        height=350
     )
-    st.plotly_chart(fig_line_meio, use_container_width=True)
+    st.plotly_chart(fig_line, use_container_width=True)
 
 
 # =========================================================
